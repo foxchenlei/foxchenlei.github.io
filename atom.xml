@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://foxchenlei.github.io/"/>
-  <updated>2020-07-24T07:34:44.398Z</updated>
+  <updated>2020-07-24T07:50:56.054Z</updated>
   <id>https://foxchenlei.github.io/</id>
   
   <author>
@@ -15,6 +15,34 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>yum error: Failed to initialize NSS library on Centos 7</title>
+    <link href="https://foxchenlei.github.io/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/"/>
+    <id>https://foxchenlei.github.io/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/</id>
+    <published>2020-07-23T16:00:00.000Z</published>
+    <updated>2020-07-24T07:50:56.054Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;h1 id=&quot;现象：&quot;&gt;&lt;a href=&quot;#现象：&quot; class=&quot;headerlink&quot; title=&quot;现象：&quot;&gt;&lt;/a&gt;现象：&lt;/h1&gt;&lt;p&gt;执行rpm或者yum 时候报错&lt;/p&gt;
+&lt;figure class=&quot;highlight
+        
+      
+    
+    </summary>
+    
+    
+      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+      <category term="centos" scheme="https://foxchenlei.github.io/tags/centos/"/>
+    
+  </entry>
   
   <entry>
     <title>ss 命令输出详解</title>

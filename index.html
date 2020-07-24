@@ -81,6 +81,89 @@
     
     
     
+    <article id="post-2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/"
+    >yum error: Failed to initialize NSS library on Centos 7</a> 
+</h2>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/" class="article-date">
+  <time datetime="2020-07-23T16:00:00.000Z" itemprop="datePublished">2020-07-24</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a>
+  </div>
+
+      
+      
+      
+    </div>
+    
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <h1 id="现象："><a href="#现象：" class="headerlink" title="现象："></a>现象：</h1><p>执行rpm或者yum 时候报错</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">error: Failed to initialize NSS library</span><br><span class="line">There was a problem importing one of the Python modules</span><br><span class="line">required to run yum. The error leading to this problem was:</span><br><span class="line"></span><br><span class="line">  cannot import name ts</span><br><span class="line"></span><br><span class="line">Please install a package which provides this module, or</span><br><span class="line">verify that the module is installed correctly.</span><br><span class="line"></span><br><span class="line">It's possible that the above module doesn't match the</span><br><span class="line">current version of Python, which is:</span><br><span class="line">2.7.5 (default, Aug 4 2017, 00:39:18)</span><br><span class="line">[GCC 4.8.5 20150623 (Red Hat 4.8.5-16)]</span><br><span class="line"></span><br><span class="line">If you cannot solve this problem yourself, please go to</span><br><span class="line">the yum faq at:</span><br><span class="line"> http://yum.baseurl.org/wiki/Faq</span><br></pre></td></tr></table></figure>
+
+
+
+<p>这是由于update不完全导致的</p>
+<p>查看yum.log日志发现</p>
+<p>nss-softokn-freebl 安装一半，或者相关nss依赖包没安装完成。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Apr 16 10:36:23 Installed: jemalloc-devel-3.6.0-1.el7.x86_64</span><br><span class="line">Apr 16 10:36:56 Updated: libgcc-4.8.5-39.el7.x86_64</span><br><span class="line">Apr 16 10:36:56 Updated: nss-softokn-freebl-3.44.0-8.el7_7.x86_64</span><br></pre></td></tr></table></figure>
+
+<h1 id="解决方式"><a href="#解决方式" class="headerlink" title="解决方式"></a>解决方式</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nss-util-3.44.0-4.el7_7.x86_64.rpm</span><br><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nspr-4.21.0-1.el7.x86_64.rpm</span><br><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nss-util-3.44.0-4.el7_7.x86_64.rpm</span><br><span class="line"></span><br><span class="line">rpm2cpio nss-util-3.44.0-4.el7_7.x86_64.rpm |cpio -idmv</span><br><span class="line"></span><br><span class="line">cp ./usr/lib64/libnssutil3.so /lib64/ </span><br><span class="line"></span><br><span class="line">rpm2cpio nspr-4.21.0-1.el7.x86_64.rpm | cpio -idmv</span><br><span class="line"></span><br><span class="line">cp -R ./usr/lib64/* /usr/lib64/</span><br></pre></td></tr></table></figure>
+
+
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+    <footer class="article-footer">
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/centos/" rel="tag">centos</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+
+  
+  
+  
+
+  
+  
+  
+
+</article>
+    
     <article id="post-2020-07-24-ss命令详解" class="article article-type-post" itemscope
   itemprop="blogPost" data-scroll-reveal>
 
@@ -837,85 +920,14 @@
 
 </article>
     
-    <article id="post-2017-12-15-基于sasl认证配置libvirt" class="article article-type-post" itemscope
-  itemprop="blogPost" data-scroll-reveal>
-
-  <div class="article-inner">
-    
-    <header class="article-header">
-       
-<h2 itemprop="name">
-  <a class="article-title" href="/2017/12/15/2017-12-15-%E5%9F%BA%E4%BA%8Esasl%E8%AE%A4%E8%AF%81%E9%85%8D%E7%BD%AElibvirt/"
-    >基于sasl认证配置libvirt</a> 
-</h2>
- 
-
-    </header>
-    
-
-    
-    <div class="article-meta">
-      <a href="/2017/12/15/2017-12-15-%E5%9F%BA%E4%BA%8Esasl%E8%AE%A4%E8%AF%81%E9%85%8D%E7%BD%AElibvirt/" class="article-date">
-  <time datetime="2017-12-14T16:00:00.000Z" itemprop="datePublished">2017-12-15</time>
-</a>
-      
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a>
-  </div>
-
-      
-      
-      
-    </div>
-    
-
-    
-
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-      
-
-      
-      <h1 id="一、修改libvirtd配置"><a href="#一、修改libvirtd配置" class="headerlink" title="一、修改libvirtd配置"></a>一、修改libvirtd配置</h1><h2 id="1-1-修改-etc-libvirt-libvirtd-conf"><a href="#1-1-修改-etc-libvirt-libvirtd-conf" class="headerlink" title="1.1 修改 /etc/libvirt/libvirtd.conf :"></a>1.1 修改 /etc/libvirt/libvirtd.conf :</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">listen_tls = 0</span><br><span class="line">listen_tcp = 1</span><br><span class="line">tcp_port = "16509"</span><br><span class="line">auth_tcp = "sasl"</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash">如果启用tls，配置如下</span></span><br><span class="line">auth_tls = "sasl"</span><br></pre></td></tr></table></figure>
-
-<h2 id="1-2-修改-etc-sysconfig-libvirtd"><a href="#1-2-修改-etc-sysconfig-libvirtd" class="headerlink" title="1.2 修改/etc/sysconfig/libvirtd"></a>1.2 修改/etc/sysconfig/libvirtd</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">开启tcp端口</span></span><br><span class="line">LIBVIRTD_ARGS="--listen"</span><br></pre></td></tr></table></figure>
-      
-      <a class="article-more-link" href="/2017/12/15/2017-12-15-%E5%9F%BA%E4%BA%8Esasl%E8%AE%A4%E8%AF%81%E9%85%8D%E7%BD%AElibvirt/">阅读更多...</a>
-      
-      
-      <!-- reward -->
-      
-    </div>
-    
-    
-      <!-- copyright -->
-      
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/libvrit/" rel="tag">libvrit</a></li></ul>
-
-
-    </footer>
-
-  </div>
-
-  
-
-  
-  
-  
-
-  
-  
-  
-
-</article>
-    
   </article>
   
 
+  
+  <nav class="page-nav">
+    
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">下一页</a>
+  </nav>
   
 </section>
 </div>
