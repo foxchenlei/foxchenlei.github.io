@@ -205,6 +205,173 @@
       </tags>
   </entry>
   <entry>
+    <title>配置shadowsocks服务端</title>
+    <url>/2018/08/09/2018-08-09-%E9%85%8D%E7%BD%AEshadowscoks%E6%9C%8D%E5%8A%A1%E7%AB%AF/</url>
+    <content><![CDATA[<h1 id="安装shadowsocks"><a href="#安装shadowsocks" class="headerlink" title="安装shadowsocks"></a>安装shadowsocks</h1><p>以centos7 举例</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pip install shadowsocks</span><br></pre></td></tr></table></figure>
+
+<hr>
+<a id="more"></a>
+
+<h1 id="配置shadowsocks"><a href="#配置shadowsocks" class="headerlink" title="配置shadowsocks"></a>配置shadowsocks</h1><p>shadowsocks有两种配置方法，一种是命令行参数配置，一种是配置文件。先来说说命令行配置</p>
+<h2 id="命令行参数配置"><a href="#命令行参数配置" class="headerlink" title="命令行参数配置"></a>命令行参数配置</h2><p>命令行参数如下：<br>|参数名 | 参数意义|<br>|:–|:–|<br>|-s | 服务器地址<br>|-p | 服务器端口号<br>|-k    |服务器密码<br>|-m    |服务器加密方式<br>|-t    |服务器超时时间<br>|-c    |配置文件路径<br>|–fast-open    |快速打开模式，仅Unix/Linux系统可用<br>|–workers    |工作者数量</p>
+<p>每次运行shadowsocks都将一大堆参数传进去是件很麻烦的事情。所以一般情况下都是采用配置文件的方式来配置的。然后通过-c参数将配置文件路径传入。</p>
+<h1 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h1><p>shadowsocks的配置文件是一个json形式的文件，各参数的意义和命令行参数意义相同。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;server&quot;:&quot;my_server_ip&quot;,</span><br><span class="line">    &quot;server_port&quot;:8388,</span><br><span class="line">    &quot;local_address&quot;: &quot;127.0.0.1&quot;,</span><br><span class="line">    &quot;local_port&quot;:1080,</span><br><span class="line">    &quot;password&quot;:&quot;mypassword&quot;,</span><br><span class="line">    &quot;timeout&quot;:300,</span><br><span class="line">    &quot;method&quot;:&quot;aes-256-cfb&quot;,</span><br><span class="line">    &quot;fast_open&quot;: false</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>服务器地址就写服务器的ip地址，不要写127.0.0.1。端口号可以自己写，但是不要占用其他服务的端口。本地地址和本地端口是客户端使用的，服务端可以不用理会。密码尽量采用复杂一点的密码，以保证安全性。加密方式使用aes-256-cfb就可以了。如果服务器是Linux系统的话，打开fast_open</p>
+<p>配置文件编辑完毕之后，就可以运行shadowsocks了。前台运行：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks&#x2F;config.json</span><br></pre></td></tr></table></figure>
+<p>后台运行和停止：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json -d start</span><br><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json -d stop</span><br></pre></td></tr></table></figure>
+<p>以上都是在root用户下运行的。以root方式运行可能会有一些安全问题。所以一般都是使用普通用户运行：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json --user nobody -d start</span><br></pre></td></tr></table></figure>
+
+<p>以上都需要自己手动运行命令来启动shadowsocks。要让shadowsocks在系统启动时自动运行，需要在/etc/rc.local中添加命令。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo ssserver -c &#x2F;etc&#x2F;shadowsocks.json --user nobody -d start</span><br></pre></td></tr></table></figure>
+
+<h1 id="shadowsocks优化"><a href="#shadowsocks优化" class="headerlink" title="shadowsocks优化"></a>shadowsocks优化</h1><h2 id="提高最大连接数"><a href="#提高最大连接数" class="headerlink" title="提高最大连接数"></a>提高最大连接数</h2><p>编辑/etc/security/limits.conf文件，添加以下两行：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">* soft nofile 51200</span><br><span class="line">* hard nofile 51200</span><br></pre></td></tr></table></figure>
+<p>然后，在启动shadowsocks服务器之前，先设置一下ulimit：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ulimit -n 51200</span><br></pre></td></tr></table></figure>
+<h2 id="调整内核参数"><a href="#调整内核参数" class="headerlink" title="调整内核参数"></a>调整内核参数</h2><p>调整内核参数的目标是：</p>
+<ul>
+<li>尽可能重用连接和端口号</li>
+<li>尽可能增大队列和缓冲区</li>
+<li>为高延迟和高流量选择合适的TCP拥塞算法</li>
+</ul>
+<p>下面是一个生产服务器的配置(/etc/sysctl.conf)，实例。如果不能使用，可能需要自己编译内核模块</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">fs.file-max &#x3D; 51200</span><br><span class="line"></span><br><span class="line">net.core.rmem_max &#x3D; 67108864</span><br><span class="line">net.core.wmem_max &#x3D; 67108864</span><br><span class="line">net.core.netdev_max_backlog &#x3D; 250000</span><br><span class="line">net.core.somaxconn &#x3D; 4096</span><br><span class="line"></span><br><span class="line">net.ipv4.tcp_syncookies &#x3D; 1</span><br><span class="line">net.ipv4.tcp_tw_reuse &#x3D; 1</span><br><span class="line">net.ipv4.tcp_tw_recycle &#x3D; 0</span><br><span class="line">net.ipv4.tcp_fin_timeout &#x3D; 30</span><br><span class="line">net.ipv4.tcp_keepalive_time &#x3D; 1200</span><br><span class="line">net.ipv4.ip_local_port_range &#x3D; 10000 65000</span><br><span class="line">net.ipv4.tcp_max_syn_backlog &#x3D; 8192</span><br><span class="line">net.ipv4.tcp_max_tw_buckets &#x3D; 5000</span><br><span class="line">net.ipv4.tcp_fastopen &#x3D; 3</span><br><span class="line">net.ipv4.tcp_mem &#x3D; 25600 51200 102400</span><br><span class="line">net.ipv4.tcp_rmem &#x3D; 4096 87380 67108864</span><br><span class="line">net.ipv4.tcp_wmem &#x3D; 4096 65536 67108864</span><br><span class="line">net.ipv4.tcp_mtu_probing &#x3D; 1</span><br><span class="line">net.ipv4.tcp_congestion_control &#x3D; hybla</span><br></pre></td></tr></table></figure>
+<p>修改之后需要运行sysctl -p来重载配置</p>
+<h3 id="转载于"><a href="#转载于" class="headerlink" title="转载于###"></a>转载于###</h3><p><a href="https://blog.csdn.net/u011054333/article/details/52496303" target="_blank" rel="noopener">https://blog.csdn.net/u011054333/article/details/52496303</a></p>
+<h1 id="docker-启动"><a href="#docker-启动" class="headerlink" title="docker 启动#"></a>docker 启动#</h1><p>有2个image可以选择<br>简单实用版</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -d -p 1984:1984 oddrationale&#x2F;docker-shadowsocks -s 0.0.0.0 -p 1984 -k $SSPASSWORD -m aes-256-cfb</span><br></pre></td></tr></table></figure>
+
+<p>持续更新，附加功能版(集成 kcptun、simple-obfs),具体参数可以查看hub.docker.com</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -dt --name ss -p 6443:6443 mritd&#x2F;shadowsocks -s &quot;-s 0.0.0.0 -p 6443 -m chacha20 -k test123 --fast-open&quot;</span><br></pre></td></tr></table></figure>
+
+
+
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>GreateWall</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kubernetes 容器 DNS 设置</title>
+    <url>/2020/04/01/2020-04-01-kubernetes%20%E5%AE%B9%E5%99%A8%20DNS%20%E8%AE%BE%E7%BD%AE/</url>
+    <content><![CDATA[<h1 id="添加默认配置"><a href="#添加默认配置" class="headerlink" title="添加默认配置"></a>添加默认配置</h1><p>在 kubernetes 中将 DNS 设置配置在 dnsConfig 配置项中， 而 dnsConfig 包含在 PodSpec 配置项中，因此 Pod 内所有容器都共享相同的 Network Namespace 。如下所示：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
+<p>即，在 nameservers 中多了 172.xxx.xxx.201 、 search 中多了 ns1.svc.cluster.local 和 my.dns.search.suffix 两项值，及多了 options ndots:2 edns0 配置。</p>
+<p>因此，直接通过 dnsConfig 进行配置后，默认是追加到当前默认配置中。</p>
+<a id="more"></a>
+
+<h1 id="DNS-策略"><a href="#DNS-策略" class="headerlink" title="DNS 策略"></a>DNS 策略</h1><p>在 kubernetes 中还提供了 dnsPolicy 决定 Pod 内预设 DNS 配置策略：</p>
+<ul>
+<li>None 无任何策略</li>
+<li>Default 默认</li>
+<li>ClusterFirst 集群 DNS 优先</li>
+<li>ClusterFirstWithHostNet 集群 DNS 优先，并伴随着使用宿主机网络</li>
+</ul>
+<h2 id="无策略-None"><a href="#无策略-None" class="headerlink" title="无策略 (None)"></a>无策略 (None)</h2><p>清除 Pod 预设 DNS 配置，当 dnsPolicy 设置成为这个值之后， kubernetes 不会为 Pod 预先加载任何逻辑用于判定得到 DNS 的配置。因此若将 dnsPolicy 设置为 None , 为了避免 Pod 里面没有 DNS 配置，最好通过 dnsConfig 来描述自定义的 DNS 参数。如下所示：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">None</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
+<h2 id="默认预设-Default"><a href="#默认预设-Default" class="headerlink" title="默认预设 (Default)"></a>默认预设 (Default)</h2><p>Pod 里面的 DNS 配置继承了宿主机上的 DNS 配置。即，该 Pod 的 DNS 配置与宿主机完全一致。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">Default</span></span><br></pre></td></tr></table></figure>
+<p>通过 cat /etc/resolv.conf 可查看到宿主机上的配置如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Dynamic resolv.conf(5) file <span class="keyword">for</span> glibc resolver(3) generated by resolvconf(8)</span></span><br><span class="line"><span class="meta">#</span><span class="bash">     DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN</span></span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
+<h2 id="集群优先-ClusterFirst"><a href="#集群优先-ClusterFirst" class="headerlink" title="集群优先 (ClusterFirst)"></a>集群优先 (ClusterFirst)</h2><p>与 Default 相反，会预先使用 kube-dns (或 CoreDNS ) 的信息当预设置参数写入到该 Pod 内的DNS配置。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
+<p>注 如设置了 hostNetwork = true 时，ClusterFirst 会被强制转化为 Default 。如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>注 设置 hostNetwork = true 之后，会让 Pod 与该节点公用相同的网络空间(网卡/路由等)</p>
+</blockquote>
+<h2 id="宿主机与-Kubernetes-共存-ClusterFirstWithHostNet"><a href="#宿主机与-Kubernetes-共存-ClusterFirstWithHostNet" class="headerlink" title="宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )"></a>宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )</h2><p>同时使用 hostNetwork 与 kube-dns 作为 Pod 预设 DNS 配置。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirstWithHostNet</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.k8s.local. svc.k8s.local. k8s.local.</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
+
+
+<p>此文章选自：<br>作者：走在成长的道路上<br>链接：<a href="https://www.jianshu.com/p/dbc063e190c9" target="_blank" rel="noopener">https://www.jianshu.com/p/dbc063e190c9</a></p>
+<p>​    </p>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>kubernetes</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>docker 异常处理集合</title>
+    <url>/2020/07/20/2020-07-20-docker-%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E9%9B%86%E5%90%88/</url>
+    <content><![CDATA[<h1 id="一、kernel-4-6-无法创建container"><a href="#一、kernel-4-6-无法创建container" class="headerlink" title="一、kernel-4.6 无法创建container"></a><strong>一、kernel-4.6 无法创建container</strong></h1><p> 4.0内核,docker官方推荐的是overlay2 做storage driver，但是，xfs文件系统在4.0上与docker不能兼容，需要更改文件系统为ext4。</p>
+<p> github链接</p>
+<p> <a href="https://github.com/docker/docker/issues/23930" target="_blank" rel="noopener">https://github.com/docker/docker/issues/23930</a></p>
+<p><strong>二、无法初始化docker</strong></p>
+<p> centos6升级到7后，storage driver是overlay的，graph无法初始化，需要把文件系统从ext4换为xfs</p>
+<p><strong>三、自定义docker配置(基于centos7)</strong></p>
+<p>之前喜欢把/var/lib/docker软链到特定的目录，会有异常bug,比如plugin无法使用，所以抛弃软链</p>
+<p>自己有个性化的设置，需要改docker.service</p>
+<p>-g 指定docker目录</p>
+<p>-s 指定storage driver</p>
+<p>-H 指定socket,监听ip/端口号</p>
+ <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sed -i '\/usr\/bin\/dockerd/aEnvironmentFile=/etc/sysconfig/docker'</span><br><span class="line">/usr/lib/systemd/system/docker.service</span><br><span class="line">sed -i s'/dockerd/dockerd $OPTIONS/' /usr/lib/systemd/system/docker.service</span><br><span class="line">echo 'OPTIONS="-g /data/docker -s overlay -H unix:///var/run/docker.sock -H 0.0.0.0:2375"'&gt;/etc/sysconfig/docker</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<p><strong>四、device or resource busy</strong></p>
+<p>有时候创建、删除、停止容器的时候，会报错如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker start c39206003c7a</span></span><br><span class="line">Error: Cannot start container c39206003c7a: Error getting container c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5 from driver devicemapper: Error mounting '/dev/mapper/docker-253:0-267081-c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5' on '/var/lib/docker/devicemapper/mnt/c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5': device or resource busy</span><br><span class="line">Error: failed to start one or more containers</span><br><span class="line"> </span><br><span class="line"><span class="meta">$</span><span class="bash"> docker rm c39206003c7a</span></span><br><span class="line">Error: Cannot destroy container c39206003c7a: Driver devicemapper failed to remove root filesystem c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5: Error running removeDevice</span><br><span class="line">Error: failed to remove one or more containers</span><br></pre></td></tr></table></figure>
+
+<p> 解决方式2种：</p>
+<p>4.1 出现问题一般是storage driver是devicemapper, 更换操作系统用Ubuntu的aufs或者redhat的overlay</p>
+<p>4.2 取消挂载</p>
+ <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">umount /var/lib/devicemapper/mnt/ 容器 id</span><br></pre></td></tr></table></figure>
+
+
+
+<p>4.3 执行命令</p>
+<p>如果状态是Dead的， 先尝试docker rm -f containerId</p>
+<p>如果不成功 执行   cat /proc/mounts | grep “mapper/docker” | awk ‘{print $2}’</p>
+<h1 id="五、busybox-nslookup-不能使用"><a href="#五、busybox-nslookup-不能使用" class="headerlink" title="五、busybox nslookup 不能使用"></a>五、busybox nslookup 不能使用</h1><p>1.29 开始修改了nslookup的解析方式。 推荐使用1.28</p>
+<p>官方issue： <a href="https://github.com/docker-library/busybox/issues/48" target="_blank" rel="noopener">https://github.com/docker-library/busybox/issues/48</a></p>
+<p>或者改用 -type=a </p>
+<h1 id="六、史诗级bug"><a href="#六、史诗级bug" class="headerlink" title="六、史诗级bug"></a>六、史诗级bug</h1><p>unregister_netdevice: waiting for lo to become free. Usage count = #</p>
+<p>issue: <a href="https://github.com/moby/moby/issues/5618" target="_blank" rel="noopener">https://github.com/moby/moby/issues/5618</a></p>
+<p>没有解决</p>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello HEXO</title>
+    <url>/2020/07/23/2020-07-07-hello-world/</url>
+    <content><![CDATA[<h1 id="记录下blog服务变化"><a href="#记录下blog服务变化" class="headerlink" title="记录下blog服务变化"></a>记录下blog服务变化</h1><p>迁移blog 到hexo</p>
+]]></content>
+      <categories>
+        <category>生活</category>
+      </categories>
+  </entry>
+  <entry>
     <title>kubeadm安装1.13</title>
     <url>/2018/12/27/2018-12-27-kubeadm%E5%AE%89%E8%A3%851.13/</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>kubeadm 快速安装kubernetes集群，kubeadm 主要功能已经GA，除了高可用 还在alpha。功能如下图</p>
@@ -408,125 +575,6 @@
       <tags>
         <tag>kubernetes</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>配置shadowsocks服务端</title>
-    <url>/2018/08/09/2018-08-09-%E9%85%8D%E7%BD%AEshadowscoks%E6%9C%8D%E5%8A%A1%E7%AB%AF/</url>
-    <content><![CDATA[<h1 id="安装shadowsocks"><a href="#安装shadowsocks" class="headerlink" title="安装shadowsocks"></a>安装shadowsocks</h1><p>以centos7 举例</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pip install shadowsocks</span><br></pre></td></tr></table></figure>
-
-<hr>
-<a id="more"></a>
-
-<h1 id="配置shadowsocks"><a href="#配置shadowsocks" class="headerlink" title="配置shadowsocks"></a>配置shadowsocks</h1><p>shadowsocks有两种配置方法，一种是命令行参数配置，一种是配置文件。先来说说命令行配置</p>
-<h2 id="命令行参数配置"><a href="#命令行参数配置" class="headerlink" title="命令行参数配置"></a>命令行参数配置</h2><p>命令行参数如下：<br>|参数名 | 参数意义|<br>|:–|:–|<br>|-s | 服务器地址<br>|-p | 服务器端口号<br>|-k    |服务器密码<br>|-m    |服务器加密方式<br>|-t    |服务器超时时间<br>|-c    |配置文件路径<br>|–fast-open    |快速打开模式，仅Unix/Linux系统可用<br>|–workers    |工作者数量</p>
-<p>每次运行shadowsocks都将一大堆参数传进去是件很麻烦的事情。所以一般情况下都是采用配置文件的方式来配置的。然后通过-c参数将配置文件路径传入。</p>
-<h1 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h1><p>shadowsocks的配置文件是一个json形式的文件，各参数的意义和命令行参数意义相同。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;server&quot;:&quot;my_server_ip&quot;,</span><br><span class="line">    &quot;server_port&quot;:8388,</span><br><span class="line">    &quot;local_address&quot;: &quot;127.0.0.1&quot;,</span><br><span class="line">    &quot;local_port&quot;:1080,</span><br><span class="line">    &quot;password&quot;:&quot;mypassword&quot;,</span><br><span class="line">    &quot;timeout&quot;:300,</span><br><span class="line">    &quot;method&quot;:&quot;aes-256-cfb&quot;,</span><br><span class="line">    &quot;fast_open&quot;: false</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>服务器地址就写服务器的ip地址，不要写127.0.0.1。端口号可以自己写，但是不要占用其他服务的端口。本地地址和本地端口是客户端使用的，服务端可以不用理会。密码尽量采用复杂一点的密码，以保证安全性。加密方式使用aes-256-cfb就可以了。如果服务器是Linux系统的话，打开fast_open</p>
-<p>配置文件编辑完毕之后，就可以运行shadowsocks了。前台运行：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks&#x2F;config.json</span><br></pre></td></tr></table></figure>
-<p>后台运行和停止：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json -d start</span><br><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json -d stop</span><br></pre></td></tr></table></figure>
-<p>以上都是在root用户下运行的。以root方式运行可能会有一些安全问题。所以一般都是使用普通用户运行：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json --user nobody -d start</span><br></pre></td></tr></table></figure>
-
-<p>以上都需要自己手动运行命令来启动shadowsocks。要让shadowsocks在系统启动时自动运行，需要在/etc/rc.local中添加命令。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo ssserver -c &#x2F;etc&#x2F;shadowsocks.json --user nobody -d start</span><br></pre></td></tr></table></figure>
-
-<h1 id="shadowsocks优化"><a href="#shadowsocks优化" class="headerlink" title="shadowsocks优化"></a>shadowsocks优化</h1><h2 id="提高最大连接数"><a href="#提高最大连接数" class="headerlink" title="提高最大连接数"></a>提高最大连接数</h2><p>编辑/etc/security/limits.conf文件，添加以下两行：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">* soft nofile 51200</span><br><span class="line">* hard nofile 51200</span><br></pre></td></tr></table></figure>
-<p>然后，在启动shadowsocks服务器之前，先设置一下ulimit：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ulimit -n 51200</span><br></pre></td></tr></table></figure>
-<h2 id="调整内核参数"><a href="#调整内核参数" class="headerlink" title="调整内核参数"></a>调整内核参数</h2><p>调整内核参数的目标是：</p>
-<ul>
-<li>尽可能重用连接和端口号</li>
-<li>尽可能增大队列和缓冲区</li>
-<li>为高延迟和高流量选择合适的TCP拥塞算法</li>
-</ul>
-<p>下面是一个生产服务器的配置(/etc/sysctl.conf)，实例。如果不能使用，可能需要自己编译内核模块</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">fs.file-max &#x3D; 51200</span><br><span class="line"></span><br><span class="line">net.core.rmem_max &#x3D; 67108864</span><br><span class="line">net.core.wmem_max &#x3D; 67108864</span><br><span class="line">net.core.netdev_max_backlog &#x3D; 250000</span><br><span class="line">net.core.somaxconn &#x3D; 4096</span><br><span class="line"></span><br><span class="line">net.ipv4.tcp_syncookies &#x3D; 1</span><br><span class="line">net.ipv4.tcp_tw_reuse &#x3D; 1</span><br><span class="line">net.ipv4.tcp_tw_recycle &#x3D; 0</span><br><span class="line">net.ipv4.tcp_fin_timeout &#x3D; 30</span><br><span class="line">net.ipv4.tcp_keepalive_time &#x3D; 1200</span><br><span class="line">net.ipv4.ip_local_port_range &#x3D; 10000 65000</span><br><span class="line">net.ipv4.tcp_max_syn_backlog &#x3D; 8192</span><br><span class="line">net.ipv4.tcp_max_tw_buckets &#x3D; 5000</span><br><span class="line">net.ipv4.tcp_fastopen &#x3D; 3</span><br><span class="line">net.ipv4.tcp_mem &#x3D; 25600 51200 102400</span><br><span class="line">net.ipv4.tcp_rmem &#x3D; 4096 87380 67108864</span><br><span class="line">net.ipv4.tcp_wmem &#x3D; 4096 65536 67108864</span><br><span class="line">net.ipv4.tcp_mtu_probing &#x3D; 1</span><br><span class="line">net.ipv4.tcp_congestion_control &#x3D; hybla</span><br></pre></td></tr></table></figure>
-<p>修改之后需要运行sysctl -p来重载配置</p>
-<h3 id="转载于"><a href="#转载于" class="headerlink" title="转载于###"></a>转载于###</h3><p><a href="https://blog.csdn.net/u011054333/article/details/52496303" target="_blank" rel="noopener">https://blog.csdn.net/u011054333/article/details/52496303</a></p>
-<h1 id="docker-启动"><a href="#docker-启动" class="headerlink" title="docker 启动#"></a>docker 启动#</h1><p>有2个image可以选择<br>简单实用版</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -d -p 1984:1984 oddrationale&#x2F;docker-shadowsocks -s 0.0.0.0 -p 1984 -k $SSPASSWORD -m aes-256-cfb</span><br></pre></td></tr></table></figure>
-
-<p>持续更新，附加功能版(集成 kcptun、simple-obfs),具体参数可以查看hub.docker.com</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -dt --name ss -p 6443:6443 mritd&#x2F;shadowsocks -s &quot;-s 0.0.0.0 -p 6443 -m chacha20 -k test123 --fast-open&quot;</span><br></pre></td></tr></table></figure>
-
-
-
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>GreateWall</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>kubernetes 容器 DNS 设置</title>
-    <url>/2020/04/01/2020-04-01-kubernetes%20%E5%AE%B9%E5%99%A8%20DNS%20%E8%AE%BE%E7%BD%AE/</url>
-    <content><![CDATA[<h1 id="添加默认配置"><a href="#添加默认配置" class="headerlink" title="添加默认配置"></a>添加默认配置</h1><p>在 kubernetes 中将 DNS 设置配置在 dnsConfig 配置项中， 而 dnsConfig 包含在 PodSpec 配置项中，因此 Pod 内所有容器都共享相同的 Network Namespace 。如下所示：</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
-<p>即，在 nameservers 中多了 172.xxx.xxx.201 、 search 中多了 ns1.svc.cluster.local 和 my.dns.search.suffix 两项值，及多了 options ndots:2 edns0 配置。</p>
-<p>因此，直接通过 dnsConfig 进行配置后，默认是追加到当前默认配置中。</p>
-<a id="more"></a>
-
-<h1 id="DNS-策略"><a href="#DNS-策略" class="headerlink" title="DNS 策略"></a>DNS 策略</h1><p>在 kubernetes 中还提供了 dnsPolicy 决定 Pod 内预设 DNS 配置策略：</p>
-<ul>
-<li>None 无任何策略</li>
-<li>Default 默认</li>
-<li>ClusterFirst 集群 DNS 优先</li>
-<li>ClusterFirstWithHostNet 集群 DNS 优先，并伴随着使用宿主机网络</li>
-</ul>
-<h2 id="无策略-None"><a href="#无策略-None" class="headerlink" title="无策略 (None)"></a>无策略 (None)</h2><p>清除 Pod 预设 DNS 配置，当 dnsPolicy 设置成为这个值之后， kubernetes 不会为 Pod 预先加载任何逻辑用于判定得到 DNS 的配置。因此若将 dnsPolicy 设置为 None , 为了避免 Pod 里面没有 DNS 配置，最好通过 dnsConfig 来描述自定义的 DNS 参数。如下所示：</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">None</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
-<h2 id="默认预设-Default"><a href="#默认预设-Default" class="headerlink" title="默认预设 (Default)"></a>默认预设 (Default)</h2><p>Pod 里面的 DNS 配置继承了宿主机上的 DNS 配置。即，该 Pod 的 DNS 配置与宿主机完全一致。</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">Default</span></span><br></pre></td></tr></table></figure>
-<p>通过 cat /etc/resolv.conf 可查看到宿主机上的配置如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Dynamic resolv.conf(5) file <span class="keyword">for</span> glibc resolver(3) generated by resolvconf(8)</span></span><br><span class="line"><span class="meta">#</span><span class="bash">     DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN</span></span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
-<h2 id="集群优先-ClusterFirst"><a href="#集群优先-ClusterFirst" class="headerlink" title="集群优先 (ClusterFirst)"></a>集群优先 (ClusterFirst)</h2><p>与 Default 相反，会预先使用 kube-dns (或 CoreDNS ) 的信息当预设置参数写入到该 Pod 内的DNS配置。</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
-<p>注 如设置了 hostNetwork = true 时，ClusterFirst 会被强制转化为 Default 。如下：</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>注 设置 hostNetwork = true 之后，会让 Pod 与该节点公用相同的网络空间(网卡/路由等)</p>
-</blockquote>
-<h2 id="宿主机与-Kubernetes-共存-ClusterFirstWithHostNet"><a href="#宿主机与-Kubernetes-共存-ClusterFirstWithHostNet" class="headerlink" title="宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )"></a>宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )</h2><p>同时使用 hostNetwork 与 kube-dns 作为 Pod 预设 DNS 配置。</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirstWithHostNet</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.k8s.local. svc.k8s.local. k8s.local.</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
-
-
-<p>此文章选自：<br>作者：走在成长的道路上<br>链接：<a href="https://www.jianshu.com/p/dbc063e190c9" target="_blank" rel="noopener">https://www.jianshu.com/p/dbc063e190c9</a></p>
-<p>​    </p>
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>kubernetes</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello HEXO</title>
-    <url>/2020/07/23/2020-07-07-hello-world/</url>
-    <content><![CDATA[<h1 id="记录下blog服务变化"><a href="#记录下blog服务变化" class="headerlink" title="记录下blog服务变化"></a>记录下blog服务变化</h1><p>迁移blog 到hexo</p>
-]]></content>
-      <categories>
-        <category>生活</category>
-      </categories>
   </entry>
   <entry>
     <title>ss 命令输出详解</title>
