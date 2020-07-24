@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>银狐的blog</title>
+  
+  <subtitle>不知道些什么</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://foxchenlei.github.io/"/>
+  <updated>2020-07-23T10:36:40.154Z</updated>
+  <id>https://foxchenlei.github.io/</id>
+  
+  <author>
+    <name>Fox Chan</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Hello HEXO</title>
+    <link href="https://foxchenlei.github.io/2020/07/23/2020-07-07-hello-world/"/>
+    <id>https://foxchenlei.github.io/2020/07/23/2020-07-07-hello-world/</id>
+    <published>2020-07-22T16:00:00.000Z</published>
+    <updated>2020-07-23T10:36:40.154Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;h1 id=&quot;记录下blog服务变化&quot;&gt;&lt;a href=&quot;#记录下blog服务变化&quot; class=&quot;headerlink&quot; title=&quot;记录下blog服务变化&quot;&gt;&lt;/a&gt;记录下blog服务变化&lt;/h1&gt;&lt;p&gt;迁移blog
+        
+      
+    
+    </summary>
+    
+    
+      <category term="生活" scheme="https://foxchenlei.github.io/categories/%E7%94%9F%E6%B4%BB/"/>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>kubeadm安装1.13</title>
+    <link href="https://foxchenlei.github.io/2018/12/27/2018-12-27-kubeadm%E5%AE%89%E8%A3%851.13/"/>
+    <id>https://foxchenlei.github.io/2018/12/27/2018-12-27-kubeadm%E5%AE%89%E8%A3%851.13/</id>
+    <published>2018-12-26T16:00:00.000Z</published>
+    <updated>2020-07-23T10:33:29.908Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;kubeadm 快速安装kubernetes集群，kubeadm 主要功能已经GA，除了高可用 还在alpha。功能如下图&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Area&lt;/th&gt;
+&lt;th&gt;Maturity Level&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;&lt;tr&gt;
+&lt;td&gt;Command line UX&lt;/td&gt;
+&lt;td&gt;GA&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Implementation&lt;/td&gt;
+&lt;td&gt;GA&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Config file API&lt;/td&gt;
+&lt;td&gt;beta&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;CoreDNS&lt;/td&gt;
+&lt;td&gt;GA&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;kubeadm alpha subcommands&lt;/td&gt;
+&lt;td&gt;alpha&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;High availability&lt;/td&gt;
+&lt;td&gt;alpha&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;DynamicKubeletConfig&lt;/td&gt;
+&lt;td&gt;alpha&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Self-hosting&lt;/td&gt;
+&lt;td&gt;alpha&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;&lt;/table&gt;
+&lt;p&gt;当前我们线上稳定运行的Kubernetes集群是使用pod形式部署的高可用集群，这里体验Kubernetes 1.13中的kubeadm是为了了解官方对集群初始化和配置方面的最佳方式&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+      <category term="kubernetes" scheme="https://foxchenlei.github.io/tags/kubernetes/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>配置shadowsocks服务端</title>
+    <link href="https://foxchenlei.github.io/2018/08/09/2018-08-09-%E9%85%8D%E7%BD%AEshadowscoks%E6%9C%8D%E5%8A%A1%E7%AB%AF/"/>
+    <id>https://foxchenlei.github.io/2018/08/09/2018-08-09-%E9%85%8D%E7%BD%AEshadowscoks%E6%9C%8D%E5%8A%A1%E7%AB%AF/</id>
+    <published>2018-08-08T16:00:00.000Z</published>
+    <updated>2020-07-23T10:33:26.316Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;安装shadowsocks&quot;&gt;&lt;a href=&quot;#安装shadowsocks&quot; class=&quot;headerlink&quot; title=&quot;安装shadowsocks&quot;&gt;&lt;/a&gt;安装shadowsocks&lt;/h1&gt;&lt;p&gt;以centos7 举例&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;pip install shadowsocks&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+&lt;hr&gt;
+    
+    </summary>
+    
+    
+      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+      <category term="GreateWall" scheme="https://foxchenlei.github.io/tags/GreateWall/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>关于kubelet 频繁du, 产生大量io</title>
+    <link href="https://foxchenlei.github.io/2018/07/16/2018-07-16-kubernetes-kubelet%E9%A2%91%E7%B9%81du-io%E8%BF%87%E9%AB%98/"/>
+    <id>https://foxchenlei.github.io/2018/07/16/2018-07-16-kubernetes-kubelet%E9%A2%91%E7%B9%81du-io%E8%BF%87%E9%AB%98/</id>
+    <published>2018-07-15T16:00:00.000Z</published>
+    <updated>2020-07-23T10:33:22.076Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;问题&quot;&gt;&lt;a href=&quot;#问题&quot; class=&quot;headerlink&quot; title=&quot;问题&quot;&gt;&lt;/a&gt;问题&lt;/h1&gt;&lt;p&gt;使用iotop查看io情况&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;Total DISK READ :       9.79 M&amp;#x2F;s | Total DISK WRITE :      24.66 K&amp;#x2F;s&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;Actual DISK READ:       8.21 M&amp;#x2F;s | Actual DISK WRITE:       0.00 B&amp;#x2F;s&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  TID  PRIO  USER     DISK READ  DISK WRITE  SWAPIN     IO&amp;gt;    COMMAND                                                      &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; 5762 be&amp;#x2F;7 root     1743.49 K&amp;#x2F;s    0.00 B&amp;#x2F;s  0.00 % 95.26 % du -s &amp;#x2F;var&amp;#x2F;lib&amp;#x2F;docker&amp;#x2F;overlay&amp;#x2F;e~61f203cd85d130b629268078be9c07f4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; 5721 be&amp;#x2F;7 root      750.23 K&amp;#x2F;s    0.00 B&amp;#x2F;s  0.00 % 94.64 % du -s &amp;#x2F;var&amp;#x2F;lib&amp;#x2F;docker&amp;#x2F;overlay&amp;#x2F;c~dd81ce0684eed62e983301a2bd67e694&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;   41 be&amp;#x2F;4 root        0.00 B&amp;#x2F;s    0.00 B&amp;#x2F;s  0.00 % 52.87 % [kswapd0]&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; 5758 be&amp;#x2F;7 root      200.77 K&amp;#x2F;s    0.00 B&amp;#x2F;s  0.00 % 34.72 % du -s &amp;#x2F;var&amp;#x2F;lib&amp;#x2F;docker&amp;#x2F;overlay&amp;#x2F;1~803fd9bf781dede9aad4c952530ff38c&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; 5761 be&amp;#x2F;7 root      718.53 K&amp;#x2F;s    0.00 B&amp;#x2F;s  0.00 % 24.93 % du -s &amp;#x2F;var&amp;#x2F;lib&amp;#x2F;docker&amp;#x2F;overlay&amp;#x2F;3~bdb22e8d3cdf465e4a205b1ef72cbd49&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; 5759 be&amp;#x2F;7 root      109.19 K&amp;#x2F;s    0.00 B&amp;#x2F;s  0.00 % 17.49 % du -s &amp;#x2F;var&amp;#x2F;lib&amp;#x2F;docker&amp;#x2F;overlay&amp;#x2F;3~be3fe72d2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;发现有好多进程在执行du命令占用了大量的磁盘io，仔细察看是kubelet在调用，kubelet在统计磁盘信息。&lt;/p&gt;
+&lt;h1 id=&quot;分析过程&quot;&gt;&lt;a href=&quot;#分析过程&quot; class=&quot;headerlink&quot; title=&quot;分析过程&quot;&gt;&lt;/a&gt;分析过程&lt;/h1&gt;&lt;p&gt;线上环境因为磁盘压力,空间不足的情况出现过大量Pod被驱逐的情形,导致节点上的Pod出现大量被驱逐状态&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/#evicting-end-user-pods&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;k8s官方说明&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;k8s默认在磁盘小于10%的时候,就会evict pod,导致线上pod不能正常启动了&lt;/p&gt;
+&lt;p&gt;官方issue&lt;br&gt;&lt;a href=&quot;https://github.com/kubernetes/kubernetes/issues/23255&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;https://github.com/kubernetes/kubernetes/issues/23255&lt;/a&gt; &lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+      <category term="kubernetes" scheme="https://foxchenlei.github.io/tags/kubernetes/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>nginx动态限流</title>
+    <link href="https://foxchenlei.github.io/2018/07/10/2018-07-10-nginx-%E5%8A%A8%E6%80%81%E9%99%90%E6%B5%81/"/>
+    <id>https://foxchenlei.github.io/2018/07/10/2018-07-10-nginx-%E5%8A%A8%E6%80%81%E9%99%90%E6%B5%81/</id>
+    <published>2018-07-09T16:00:00.000Z</published>
+    <updated>2020-07-23T10:33:17.006Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;动态限流一般是lua+redis,需要添加lua模块，或者把nginx直接替换为openresty.这个涉及到自己实现lua脚本，对于小白是有些难度的，这里利用第三方模块去实现，比lua要简单些，快速实现动态限流。&lt;/p&gt;
+&lt;p&gt;以下是nginx官方的第三方模块列表&lt;br&gt;&lt;a href=&quot;https://www.nginx.com/resources/wiki/modules/index.html&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot; title=&quot;NGINX 3rd Party Modules&quot;&gt;NGINX 3rd Party Modules&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;我们使用&lt;a href=&quot;https://github.com/limithit/ngx_dynamic_limit_req_module&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;ngx_dynamic_limit_req_module&lt;/a&gt;，配合redis实现动态限流&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+      <category term="nginx" scheme="https://foxchenlei.github.io/tags/nginx/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>jenkins与gitlab整合</title>
+    <link href="https://foxchenlei.github.io/2018/07/09/2018-07-09-jenkins-gitlab-webhook/"/>
+    <id>https://foxchenlei.github.io/2018/07/09/2018-07-09-jenkins-gitlab-webhook/</id>
+    <published>2018-07-08T16:00:00.000Z</published>
+    <updated>2020-07-24T06:44:16.176Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;1、环境说明&quot;&gt;&lt;a href=&quot;#1、环境说明&quot; class=&quot;headerlink&quot; title=&quot;1、环境说明&quot;&gt;&lt;/a&gt;1、环境说明&lt;/h1&gt;&lt;p&gt;jenkins: 2.68&lt;/p&gt;
+&lt;p&gt;gitlab : 10.1.1&lt;/p&gt;
+&lt;p&gt;tomcat ：6.0.18&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;注意：不同版本gitlab，配置webhook方式有差异，这里只展示当前版本&lt;/strong&gt;&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+      <category term="jenkins" scheme="https://foxchenlei.github.io/tags/jenkins/"/>
+    
+      <category term="gitlab" scheme="https://foxchenlei.github.io/tags/gitlab/"/>
+    
+  </entry>
+  
+</feed>
