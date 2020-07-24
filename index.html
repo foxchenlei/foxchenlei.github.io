@@ -81,6 +81,80 @@
     
     
     
+    <article id="post-2020-07-24-ss命令详解" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/"
+    >ss 命令输出详解</a> 
+</h2>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time datetime="2020-07-23T16:00:00.000Z" itemprop="datePublished">2020-07-24</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a>
+  </div>
+
+      
+      
+      
+    </div>
+    
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <h1 id="ss-命令输出详解"><a href="#ss-命令输出详解" class="headerlink" title="ss 命令输出详解"></a>ss 命令输出详解</h1><p>ss 全名socket statistics，是iproute2中的一员<br>ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？</p>
+      
+      <a class="article-more-link" href="/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/">阅读更多...</a>
+      
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+    <footer class="article-footer">
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/centos/" rel="tag">centos</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+
+  
+  
+  
+
+  
+  
+  
+
+</article>
+    
     <article id="post-2020-07-07-hello-world" class="article article-type-post" itemscope
   itemprop="blogPost" data-scroll-reveal>
 
@@ -134,6 +208,85 @@
     <footer class="article-footer">
       
       
+
+    </footer>
+
+  </div>
+
+  
+
+  
+  
+  
+
+  
+  
+  
+
+</article>
+    
+    <article id="post-2020-04-01-kubernetes 容器 DNS 设置" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2020/04/01/2020-04-01-kubernetes%20%E5%AE%B9%E5%99%A8%20DNS%20%E8%AE%BE%E7%BD%AE/"
+    >kubernetes 容器 DNS 设置</a> 
+</h2>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/04/01/2020-04-01-kubernetes%20%E5%AE%B9%E5%99%A8%20DNS%20%E8%AE%BE%E7%BD%AE/" class="article-date">
+  <time datetime="2020-03-31T16:00:00.000Z" itemprop="datePublished">2020-04-01</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a>
+  </div>
+
+      
+      
+      
+    </div>
+    
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <h1 id="添加默认配置"><a href="#添加默认配置" class="headerlink" title="添加默认配置"></a>添加默认配置</h1><p>在 kubernetes 中将 DNS 设置配置在 dnsConfig 配置项中， 而 dnsConfig 包含在 PodSpec 配置项中，因此 Pod 内所有容器都共享相同的 Network Namespace 。如下所示：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
+<p>即，在 nameservers 中多了 172.xxx.xxx.201 、 search 中多了 ns1.svc.cluster.local 和 my.dns.search.suffix 两项值，及多了 options ndots:2 edns0 配置。</p>
+<p>因此，直接通过 dnsConfig 进行配置后，默认是追加到当前默认配置中。</p>
+      
+      <a class="article-more-link" href="/2020/04/01/2020-04-01-kubernetes%20%E5%AE%B9%E5%99%A8%20DNS%20%E8%AE%BE%E7%BD%AE/">阅读更多...</a>
+      
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+    <footer class="article-footer">
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/kubernetes/" rel="tag">kubernetes</a></li></ul>
+
 
     </footer>
 
@@ -558,6 +711,82 @@
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/gitlab/" rel="tag">gitlab</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/jenkins/" rel="tag">jenkins</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+
+  
+  
+  
+
+  
+  
+  
+
+</article>
+    
+    <article id="post-2017-12-15-基于sasl认证配置libvirt" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2017/12/15/2017-12-15-%E5%9F%BA%E4%BA%8Esasl%E8%AE%A4%E8%AF%81%E9%85%8D%E7%BD%AElibvirt/"
+    >基于sasl认证配置libvirt</a> 
+</h2>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2017/12/15/2017-12-15-%E5%9F%BA%E4%BA%8Esasl%E8%AE%A4%E8%AF%81%E9%85%8D%E7%BD%AElibvirt/" class="article-date">
+  <time datetime="2017-12-14T16:00:00.000Z" itemprop="datePublished">2017-12-15</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a>
+  </div>
+
+      
+      
+      
+    </div>
+    
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <h1 id="一、修改libvirtd配置"><a href="#一、修改libvirtd配置" class="headerlink" title="一、修改libvirtd配置"></a>一、修改libvirtd配置</h1><h2 id="1-1-修改-etc-libvirt-libvirtd-conf"><a href="#1-1-修改-etc-libvirt-libvirtd-conf" class="headerlink" title="1.1 修改 /etc/libvirt/libvirtd.conf :"></a>1.1 修改 /etc/libvirt/libvirtd.conf :</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">listen_tls = 0</span><br><span class="line">listen_tcp = 1</span><br><span class="line">tcp_port = "16509"</span><br><span class="line">auth_tcp = "sasl"</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash">如果启用tls，配置如下</span></span><br><span class="line">auth_tls = "sasl"</span><br></pre></td></tr></table></figure>
+
+<h2 id="1-2-修改-etc-sysconfig-libvirtd"><a href="#1-2-修改-etc-sysconfig-libvirtd" class="headerlink" title="1.2 修改/etc/sysconfig/libvirtd"></a>1.2 修改/etc/sysconfig/libvirtd</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">开启tcp端口</span></span><br><span class="line">LIBVIRTD_ARGS="--listen"</span><br></pre></td></tr></table></figure>
+      
+      <a class="article-more-link" href="/2017/12/15/2017-12-15-%E5%9F%BA%E4%BA%8Esasl%E8%AE%A4%E8%AF%81%E9%85%8D%E7%BD%AElibvirt/">阅读更多...</a>
+      
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+    <footer class="article-footer">
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/libvrit/" rel="tag">libvrit</a></li></ul>
 
 
     </footer>

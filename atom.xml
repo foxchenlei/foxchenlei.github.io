@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://foxchenlei.github.io/"/>
-  <updated>2020-07-23T10:36:40.154Z</updated>
+  <updated>2020-07-24T07:34:44.398Z</updated>
   <id>https://foxchenlei.github.io/</id>
   
   <author>
@@ -17,11 +17,32 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>ss 命令输出详解</title>
+    <link href="https://foxchenlei.github.io/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/"/>
+    <id>https://foxchenlei.github.io/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/</id>
+    <published>2020-07-23T16:00:00.000Z</published>
+    <updated>2020-07-24T07:34:44.398Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;ss-命令输出详解&quot;&gt;&lt;a href=&quot;#ss-命令输出详解&quot; class=&quot;headerlink&quot; title=&quot;ss 命令输出详解&quot;&gt;&lt;/a&gt;ss 命令输出详解&lt;/h1&gt;&lt;p&gt;ss 全名socket statistics，是iproute2中的一员&lt;br&gt;ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+      <category term="centos" scheme="https://foxchenlei.github.io/tags/centos/"/>
+    
+  </entry>
+  
+  <entry>
     <title>Hello HEXO</title>
     <link href="https://foxchenlei.github.io/2020/07/23/2020-07-07-hello-world/"/>
     <id>https://foxchenlei.github.io/2020/07/23/2020-07-07-hello-world/</id>
     <published>2020-07-22T16:00:00.000Z</published>
-    <updated>2020-07-23T10:36:40.154Z</updated>
+    <updated>2020-07-24T07:05:59.205Z</updated>
     
     <summary type="html">
     
@@ -38,6 +59,32 @@
     
       <category term="生活" scheme="https://foxchenlei.github.io/categories/%E7%94%9F%E6%B4%BB/"/>
     
+    
+  </entry>
+  
+  <entry>
+    <title>kubernetes 容器 DNS 设置</title>
+    <link href="https://foxchenlei.github.io/2020/04/01/2020-04-01-kubernetes%20%E5%AE%B9%E5%99%A8%20DNS%20%E8%AE%BE%E7%BD%AE/"/>
+    <id>https://foxchenlei.github.io/2020/04/01/2020-04-01-kubernetes%20%E5%AE%B9%E5%99%A8%20DNS%20%E8%AE%BE%E7%BD%AE/</id>
+    <published>2020-03-31T16:00:00.000Z</published>
+    <updated>2020-07-24T07:30:22.432Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;添加默认配置&quot;&gt;&lt;a href=&quot;#添加默认配置&quot; class=&quot;headerlink&quot; title=&quot;添加默认配置&quot;&gt;&lt;/a&gt;添加默认配置&lt;/h1&gt;&lt;p&gt;在 kubernetes 中将 DNS 设置配置在 dnsConfig 配置项中， 而 dnsConfig 包含在 PodSpec 配置项中，因此 Pod 内所有容器都共享相同的 Network Namespace 。如下所示：&lt;/p&gt;
+&lt;figure class=&quot;highlight yaml&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;18&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;19&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;20&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;21&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;22&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;23&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;attr&quot;&gt;apiVersion:&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;v1&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;attr&quot;&gt;kind:&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Pod&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;attr&quot;&gt;metadata:&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;attr&quot;&gt;name:&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;demo&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;attr&quot;&gt;namespace:&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;default&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;attr&quot;&gt;spec:&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;attr&quot;&gt;containers:&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;bullet&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;attr&quot;&gt;image:&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;base/java&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;attr&quot;&gt;command:&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;bullet&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;&quot;java -jar /opt/app.jar&quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;attr&quot;&gt;imagePullPolicy:&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;IfNotPresent&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;attr&quot;&gt;name:&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;demo&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;attr&quot;&gt;restartPolicy:&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;Always&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  &lt;span class=&quot;attr&quot;&gt;dnsConfig:&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;attr&quot;&gt;nameservers:&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;bullet&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;number&quot;&gt;172.&lt;/span&gt;&lt;span class=&quot;string&quot;&gt;xxx.xxx.201&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;attr&quot;&gt;searches:&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;bullet&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;ns1.svc.cluster.local&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;bullet&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;my.dns.search.suffix&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;    &lt;span class=&quot;attr&quot;&gt;options:&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;bullet&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;attr&quot;&gt;name:&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;ndots&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;        &lt;span class=&quot;attr&quot;&gt;value:&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;&quot;2&quot;&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;      &lt;span class=&quot;bullet&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;attr&quot;&gt;name:&lt;/span&gt; &lt;span class=&quot;string&quot;&gt;edns0&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：&lt;/p&gt;
+&lt;figure class=&quot;highlight shell&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;nameserver 10.20.0.2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;nameserver 172.xxx.xxx.201&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;search default.svc.cluster.local svc.cluster.local cluster.local ns1.svc.cluster.local my.dns.search.suffix&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;options ndots:2 edns0&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;即，在 nameservers 中多了 172.xxx.xxx.201 、 search 中多了 ns1.svc.cluster.local 和 my.dns.search.suffix 两项值，及多了 options ndots:2 edns0 配置。&lt;/p&gt;
+&lt;p&gt;因此，直接通过 dnsConfig 进行配置后，默认是追加到当前默认配置中。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+      <category term="kubernetes" scheme="https://foxchenlei.github.io/tags/kubernetes/"/>
     
   </entry>
   
@@ -200,6 +247,29 @@
       <category term="jenkins" scheme="https://foxchenlei.github.io/tags/jenkins/"/>
     
       <category term="gitlab" scheme="https://foxchenlei.github.io/tags/gitlab/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>基于sasl认证配置libvirt</title>
+    <link href="https://foxchenlei.github.io/2017/12/15/2017-12-15-%E5%9F%BA%E4%BA%8Esasl%E8%AE%A4%E8%AF%81%E9%85%8D%E7%BD%AElibvirt/"/>
+    <id>https://foxchenlei.github.io/2017/12/15/2017-12-15-%E5%9F%BA%E4%BA%8Esasl%E8%AE%A4%E8%AF%81%E9%85%8D%E7%BD%AElibvirt/</id>
+    <published>2017-12-14T16:00:00.000Z</published>
+    <updated>2020-07-24T07:30:33.219Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;一、修改libvirtd配置&quot;&gt;&lt;a href=&quot;#一、修改libvirtd配置&quot; class=&quot;headerlink&quot; title=&quot;一、修改libvirtd配置&quot;&gt;&lt;/a&gt;一、修改libvirtd配置&lt;/h1&gt;&lt;h2 id=&quot;1-1-修改-etc-libvirt-libvirtd-conf&quot;&gt;&lt;a href=&quot;#1-1-修改-etc-libvirt-libvirtd-conf&quot; class=&quot;headerlink&quot; title=&quot;1.1 修改 /etc/libvirt/libvirtd.conf :&quot;&gt;&lt;/a&gt;1.1 修改 /etc/libvirt/libvirtd.conf :&lt;/h2&gt;&lt;figure class=&quot;highlight shell&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;listen_tls = 0&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;listen_tcp = 1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;tcp_port = &quot;16509&quot;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;auth_tcp = &quot;sasl&quot;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;bash&quot;&gt;如果启用tls，配置如下&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;auth_tls = &quot;sasl&quot;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;1-2-修改-etc-sysconfig-libvirtd&quot;&gt;&lt;a href=&quot;#1-2-修改-etc-sysconfig-libvirtd&quot; class=&quot;headerlink&quot; title=&quot;1.2 修改/etc/sysconfig/libvirtd&quot;&gt;&lt;/a&gt;1.2 修改/etc/sysconfig/libvirtd&lt;/h2&gt;&lt;figure class=&quot;highlight shell&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;&lt;span class=&quot;meta&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;bash&quot;&gt;开启tcp端口&lt;/span&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;LIBVIRTD_ARGS=&quot;--listen&quot;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+    
+    </summary>
+    
+    
+      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+      <category term="libvrit" scheme="https://foxchenlei.github.io/tags/libvrit/"/>
     
   </entry>
   
