@@ -123,6 +123,8 @@
 <p>nss-softokn-freebl 安装一半，或者相关nss依赖包没安装完成。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Apr 16 10:36:23 Installed: jemalloc-devel-3.6.0-1.el7.x86_64</span><br><span class="line">Apr 16 10:36:56 Updated: libgcc-4.8.5-39.el7.x86_64</span><br><span class="line">Apr 16 10:36:56 Updated: nss-softokn-freebl-3.44.0-8.el7_7.x86_64</span><br></pre></td></tr></table></figure>
 
+<a id="more"></a>
+
 <h1 id="解决方式"><a href="#解决方式" class="headerlink" title="解决方式"></a>解决方式</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nss-util-3.44.0-4.el7_7.x86_64.rpm</span><br><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nspr-4.21.0-1.el7.x86_64.rpm</span><br><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nss-util-3.44.0-4.el7_7.x86_64.rpm</span><br><span class="line"></span><br><span class="line">rpm2cpio nss-util-3.44.0-4.el7_7.x86_64.rpm |cpio -idmv</span><br><span class="line"></span><br><span class="line">cp ./usr/lib64/libnssutil3.so /lib64/ </span><br><span class="line"></span><br><span class="line">rpm2cpio nspr-4.21.0-1.el7.x86_64.rpm | cpio -idmv</span><br><span class="line"></span><br><span class="line">cp -R ./usr/lib64/* /usr/lib64/</span><br></pre></td></tr></table></figure>
 
 
@@ -211,10 +213,19 @@
   
   <nav class="article-nav">
     
-    
       <a href="/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            ss 命令输出详解
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2020/07/23/2020-07-07-hello-world/" class="article-nav-link">
         <strong class="article-nav-caption">下一篇</strong>
-        <div class="article-nav-title">ss 命令输出详解</div>
+        <div class="article-nav-title">Hello HEXO</div>
       </a>
     
   </nav>

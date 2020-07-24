@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://foxchenlei.github.io/"/>
-  <updated>2020-07-24T07:50:56.054Z</updated>
+  <updated>2020-07-24T07:34:44.398Z</updated>
   <id>https://foxchenlei.github.io/</id>
   
   <author>
@@ -17,22 +17,15 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>yum error: Failed to initialize NSS library on Centos 7</title>
-    <link href="https://foxchenlei.github.io/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/"/>
-    <id>https://foxchenlei.github.io/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/</id>
+    <title>ss 命令输出详解</title>
+    <link href="https://foxchenlei.github.io/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/"/>
+    <id>https://foxchenlei.github.io/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/</id>
     <published>2020-07-23T16:00:00.000Z</published>
-    <updated>2020-07-24T07:50:56.054Z</updated>
+    <updated>2020-07-24T07:34:44.398Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          &lt;h1 id=&quot;现象：&quot;&gt;&lt;a href=&quot;#现象：&quot; class=&quot;headerlink&quot; title=&quot;现象：&quot;&gt;&lt;/a&gt;现象：&lt;/h1&gt;&lt;p&gt;执行rpm或者yum 时候报错&lt;/p&gt;
-&lt;figure class=&quot;highlight
-        
-      
+      &lt;h1 id=&quot;ss-命令输出详解&quot;&gt;&lt;a href=&quot;#ss-命令输出详解&quot; class=&quot;headerlink&quot; title=&quot;ss 命令输出详解&quot;&gt;&lt;/a&gt;ss 命令输出详解&lt;/h1&gt;&lt;p&gt;ss 全名socket statistics，是iproute2中的一员&lt;br&gt;ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？&lt;/p&gt;
     
     </summary>
     
@@ -45,15 +38,23 @@
   </entry>
   
   <entry>
-    <title>ss 命令输出详解</title>
-    <link href="https://foxchenlei.github.io/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/"/>
-    <id>https://foxchenlei.github.io/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/</id>
+    <title>yum error: Failed to initialize NSS library on Centos 7</title>
+    <link href="https://foxchenlei.github.io/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/"/>
+    <id>https://foxchenlei.github.io/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/</id>
     <published>2020-07-23T16:00:00.000Z</published>
-    <updated>2020-07-24T07:34:44.398Z</updated>
+    <updated>2020-07-24T07:54:04.067Z</updated>
     
     <summary type="html">
     
-      &lt;h1 id=&quot;ss-命令输出详解&quot;&gt;&lt;a href=&quot;#ss-命令输出详解&quot; class=&quot;headerlink&quot; title=&quot;ss 命令输出详解&quot;&gt;&lt;/a&gt;ss 命令输出详解&lt;/h1&gt;&lt;p&gt;ss 全名socket statistics，是iproute2中的一员&lt;br&gt;ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？&lt;/p&gt;
+      &lt;h1 id=&quot;现象：&quot;&gt;&lt;a href=&quot;#现象：&quot; class=&quot;headerlink&quot; title=&quot;现象：&quot;&gt;&lt;/a&gt;现象：&lt;/h1&gt;&lt;p&gt;执行rpm或者yum 时候报错&lt;/p&gt;
+&lt;figure class=&quot;highlight shell&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;6&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;7&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;8&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;9&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;10&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;11&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;12&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;13&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;14&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;15&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;16&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;17&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;error: Failed to initialize NSS library&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;There was a problem importing one of the Python modules&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;required to run yum. The error leading to this problem was:&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;  cannot import name ts&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;Please install a package which provides this module, or&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;verify that the module is installed correctly.&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;It&#39;s possible that the above module doesn&#39;t match the&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;current version of Python, which is:&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2.7.5 (default, Aug 4 2017, 00:39:18)&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;[GCC 4.8.5 20150623 (Red Hat 4.8.5-16)]&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;If you cannot solve this problem yourself, please go to&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;the yum faq at:&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt; http://yum.baseurl.org/wiki/Faq&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+
+
+&lt;p&gt;这是由于update不完全导致的&lt;/p&gt;
+&lt;p&gt;查看yum.log日志发现&lt;/p&gt;
+&lt;p&gt;nss-softokn-freebl 安装一半，或者相关nss依赖包没安装完成。&lt;/p&gt;
+&lt;figure class=&quot;highlight shell&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;Apr 16 10:36:23 Installed: jemalloc-devel-3.6.0-1.el7.x86_64&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;Apr 16 10:36:56 Updated: libgcc-4.8.5-39.el7.x86_64&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;Apr 16 10:36:56 Updated: nss-softokn-freebl-3.44.0-8.el7_7.x86_64&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
     
     </summary>
     
@@ -95,17 +96,13 @@
     <link href="https://foxchenlei.github.io/2020/07/20/2020-07-20-docker-%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E9%9B%86%E5%90%88/"/>
     <id>https://foxchenlei.github.io/2020/07/20/2020-07-20-docker-%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E9%9B%86%E5%90%88/</id>
     <published>2020-07-19T16:00:00.000Z</published>
-    <updated>2020-07-24T07:48:51.053Z</updated>
+    <updated>2020-07-24T07:54:13.872Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          &lt;h1 id=&quot;一、kernel-4-6-无法创建container&quot;&gt;&lt;a href=&quot;#一、kernel-4-6-无法创建container&quot; class=&quot;headerlink&quot; title=&quot;一、kernel-4.6
-        
-      
+      &lt;h1 id=&quot;一、kernel-4-6-无法创建container&quot;&gt;&lt;a href=&quot;#一、kernel-4-6-无法创建container&quot; class=&quot;headerlink&quot; title=&quot;一、kernel-4.6 无法创建container&quot;&gt;&lt;/a&gt;&lt;strong&gt;一、kernel-4.6 无法创建container&lt;/strong&gt;&lt;/h1&gt;&lt;p&gt; 4.0内核,docker官方推荐的是overlay2 做storage driver，但是，xfs文件系统在4.0上与docker不能兼容，需要更改文件系统为ext4。&lt;/p&gt;
+&lt;p&gt; github链接&lt;/p&gt;
+&lt;p&gt; &lt;a href=&quot;https://github.com/docker/docker/issues/23930&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;https://github.com/docker/docker/issues/23930&lt;/a&gt;&lt;/p&gt;
     
     </summary>
     

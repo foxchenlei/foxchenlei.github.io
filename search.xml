@@ -1,43 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>nginx动态限流</title>
-    <url>/2018/07/10/2018-07-10-nginx-%E5%8A%A8%E6%80%81%E9%99%90%E6%B5%81/</url>
-    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>动态限流一般是lua+redis,需要添加lua模块，或者把nginx直接替换为openresty.这个涉及到自己实现lua脚本，对于小白是有些难度的，这里利用第三方模块去实现，比lua要简单些，快速实现动态限流。</p>
-<p>以下是nginx官方的第三方模块列表<br><a href="https://www.nginx.com/resources/wiki/modules/index.html" target="_blank" rel="noopener" title="NGINX 3rd Party Modules">NGINX 3rd Party Modules</a></p>
-<p>我们使用<a href="https://github.com/limithit/ngx_dynamic_limit_req_module" target="_blank" rel="noopener">ngx_dynamic_limit_req_module</a>，配合redis实现动态限流</p>
+    <title>jenkins与gitlab整合</title>
+    <url>/2018/07/09/2018-07-09-jenkins-gitlab-webhook/</url>
+    <content><![CDATA[<h1 id="1、环境说明"><a href="#1、环境说明" class="headerlink" title="1、环境说明"></a>1、环境说明</h1><p>jenkins: 2.68</p>
+<p>gitlab : 10.1.1</p>
+<p>tomcat ：6.0.18</p>
+<p><strong>注意：不同版本gitlab，配置webhook方式有差异，这里只展示当前版本</strong></p>
 <a id="more"></a>
 
-<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><h2 id="环境说明"><a href="#环境说明" class="headerlink" title="环境说明"></a>环境说明</h2><p>hiredis ： redis官方 C api<br>nginx   :  版本必须高于1.9.11.</p>
-<h2 id="下载并编译hiredis"><a href="#下载并编译hiredis" class="headerlink" title="下载并编译hiredis"></a>下载并编译hiredis</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[root hiredis]# wget https:&#x2F;&#x2F;github.com&#x2F;redis&#x2F;hiredis&#x2F;archive&#x2F;v0.13.3.tar.gz</span><br><span class="line">[root hiredis]# tar -zxf v0.13.3.tar.gz</span><br><span class="line">[root hiredis]# cd hiredis-0.13.3&#x2F;</span><br><span class="line">[root hiredis]# make</span><br><span class="line">[root hiredis]# make install</span><br><span class="line">mkdir -p &#x2F;usr&#x2F;local&#x2F;include&#x2F;hiredis &#x2F;usr&#x2F;local&#x2F;lib</span><br><span class="line">cp -a hiredis.h async.h read.h sds.h adapters &#x2F;usr&#x2F;local&#x2F;include&#x2F;hiredis</span><br><span class="line">cp -a libhiredis.so &#x2F;usr&#x2F;local&#x2F;lib&#x2F;libhiredis.so.0.13</span><br><span class="line">cd &#x2F;usr&#x2F;local&#x2F;lib &amp;&amp; ln -sf libhiredis.so.0.13 libhiredis.so</span><br><span class="line">cp -a libhiredis.a &#x2F;usr&#x2F;local&#x2F;lib</span><br><span class="line">mkdir -p &#x2F;usr&#x2F;local&#x2F;lib&#x2F;pkgconfig</span><br><span class="line">cp -a hiredis.pc &#x2F;usr&#x2F;local&#x2F;lib&#x2F;pkgconfig</span><br></pre></td></tr></table></figure>
+<h1 id="2、相关依赖包"><a href="#2、相关依赖包" class="headerlink" title="2、相关依赖包"></a>2、相关依赖包</h1><p>该功能需要jenkins 安装插件Gitlab Hook Plugin</p>
+<h2 id="2-1-jenkins在安装gitlab-hook-plugins提示失败"><a href="#2-1-jenkins在安装gitlab-hook-plugins提示失败" class="headerlink" title="2.1 jenkins在安装gitlab hook plugins提示失败:"></a>2.1 jenkins在安装gitlab hook plugins提示失败:</h2><p>问题 : gitlab hook plugin无法安装的原因是因为ruby-runtime无法安装</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">java.io.IOException: Failed to dynamically deploy this plugin</span><br><span class="line">at hudson.model.UpdateCenter$InstallationJob._run(UpdateCenter.java:1328)</span><br><span class="line">at hudson.model.UpdateCenter$DownloadJob.run(UpdateCenter.java:1126)</span><br><span class="line">at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)</span><br><span class="line">at java.util.concurrent.FutureTask.run(FutureTask.java:266)</span><br><span class="line">at hudson.remoting.AtmostOneThreadExecutor$Worker.run(AtmostOneThreadExecutor.java:110)</span><br><span class="line">at java.lang.Thread.run(Thread.java:745)</span><br><span class="line">Caused by: java.io.IOException: Failed to install ruby-runtime plugin</span><br><span class="line">at hudson.PluginManager.dynamicLoad(PluginManager.java:487)</span><br><span class="line">at hudson.model.UpdateCenter$InstallationJob._run(UpdateCenter.java:1324)</span><br><span class="line">... 5 more</span><br><span class="line">Caused by: java.io.IOException: Failed to initialize</span><br><span class="line">at hudson.ClassicPluginStrategy.load(ClassicPluginStrategy.java:441)</span><br><span class="line">at hudson.PluginManager.dynamicLoad(PluginManager.java:478)</span><br><span class="line">... 6 more</span><br><span class="line">Caused by: java.lang.ClassCircularityError: org&#x2F;jruby&#x2F;RubyClass</span><br><span class="line">at java.lang.Class.forName0(Native Method)</span><br><span class="line">at java.lang.Class.forName(Class.java:348)</span><br></pre></td></tr></table></figure>
 
-<h2 id="下载并安装nginx"><a href="#下载并安装nginx" class="headerlink" title="下载并安装nginx"></a>下载并安装nginx</h2><p>因为原生nginx没有upstream检查，需要添加第三方模块</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget https:&#x2F;&#x2F;github.com&#x2F;yaoweibin&#x2F;nginx_upstream_check_module&#x2F;archive&#x2F;master.zip</span><br><span class="line">unzip master.zip</span><br></pre></td></tr></table></figure>
-<p>开始安装nginx</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget http:&#x2F;&#x2F;nginx.org&#x2F;download&#x2F;nginx-1.14.0.tar.gz</span><br><span class="line">tar -zxf nginx-1.14.0.tar.gz</span><br><span class="line">cd nginx-1.14.0&#x2F;</span><br><span class="line"> .&#x2F;configure --prefix&#x3D;&#x2F;usr&#x2F;local&#x2F;nginx --with-pcre&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;pcre-8.42 --with-http_stub_status_module  --with-http_ssl_module --with-http_v2_module  --add-module&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;ngx_dynamic_limit_req_module-1.7 --add-module&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;nginx_upstream_check_module-master</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<p>检查hiredis是否安装成功，如果是not found,就建个软链</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ldd &#x2F;usr&#x2F;local&#x2F;nginx&#x2F;sbin&#x2F;nginx|grep libhiredis</span><br><span class="line">libhiredis.so.0.13 &#x3D;&gt; not found (0x00007fd0fa245000)</span><br><span class="line">#查看之前生成的 so文件路径并软链</span><br><span class="line">&#x2F;lib&#x2F;libhiredis.so.0.13 -&gt; &#x2F;usr&#x2F;local&#x2F;lib&#x2F;libhiredis.so.0.13</span><br></pre></td></tr></table></figure>
+<p>这是官方issue <a href="https://issues.jenkins-ci.org/browse/JENKINS-31019" target="_blank" rel="noopener">https://issues.jenkins-ci.org/browse/JENKINS-31019</a></p>
+<p>处理方式：给jenkins的启动容器添加JAVA_OPTIONS，我这里是tomcat，所以添加JAVA_OPTS到catalina.sh</p>
+ <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">JAVA_OPTS&#x3D;&quot;-Djava.awt.headless&#x3D;true -Dhudson.ClassicPluginStrategy.noBytecodeTransformer&#x3D;true&quot;</span><br></pre></td></tr></table></figure>
 
-<h2 id="这时候就可以装个redis了"><a href="#这时候就可以装个redis了" class="headerlink" title="这时候就可以装个redis了"></a>这时候就可以装个redis了</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum install redis -y</span><br><span class="line">systemctl start redis</span><br></pre></td></tr></table></figure>
+<h1 id="3、配置gitlab认证"><a href="#3、配置gitlab认证" class="headerlink" title="3、配置gitlab认证"></a>3、配置gitlab认证</h1><img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/1.png" class="">
 
-<h1 id="配置文件模板"><a href="#配置文件模板" class="headerlink" title="配置文件模板"></a>配置文件模板</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">worker_processes  2;</span><br><span class="line">events &#123;</span><br><span class="line">    worker_connections  1024;</span><br><span class="line">&#125;</span><br><span class="line">http &#123;</span><br><span class="line">    include       mime.types;</span><br><span class="line">    default_type  application&#x2F;octet-stream;</span><br><span class="line">    sendfile        on;</span><br><span class="line">    keepalive_timeout  65;</span><br><span class="line">    </span><br><span class="line">    dynamic_limit_req_zone $binary_remote_addr zone&#x3D;one:10m rate&#x3D;100r&#x2F;s redis&#x3D;127.0.0.1 block_second&#x3D;300;</span><br><span class="line">    dynamic_limit_req_zone $binary_remote_addr zone&#x3D;two:10m rate&#x3D;50r&#x2F;s redis&#x3D;127.0.0.1 block_second&#x3D;600;</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    server &#123;</span><br><span class="line">        listen       80;</span><br><span class="line">        server_name  localhost;</span><br><span class="line">        location &#x2F; &#123;</span><br><span class="line">            root   html;</span><br><span class="line">            index  index.html index.htm;</span><br><span class="line">            dynamic_limit_req zone&#x3D;one burst&#x3D;5 nodelay;</span><br><span class="line">            dynamic_limit_req_status 403;</span><br><span class="line">        &#125;</span><br><span class="line">        error_page   500 502 503 504  &#x2F;50x.html;</span><br><span class="line">        location &#x3D; &#x2F;50x.html &#123;</span><br><span class="line">            root   html;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    server &#123;</span><br><span class="line">        listen       80;</span><br><span class="line">        server_name  localhost2;</span><br><span class="line">        location &#x2F; &#123;</span><br><span class="line">            root   html;</span><br><span class="line">            index  index.html index.htm;</span><br><span class="line">            dynamic_limit_req zone&#x3D;two burst&#x3D;5 nodelay;</span><br><span class="line">            dynamic_limit_req_status 403;</span><br><span class="line">        &#125;</span><br><span class="line">        error_page   500 502 503 504  &#x2F;50x.html;</span><br><span class="line">        location &#x3D; &#x2F;50x.html &#123;</span><br><span class="line">            root   html;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>添加一个新的凭证</p>
+<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/2.png" class="">
 
-<h2 id="支持黑白名单"><a href="#支持黑白名单" class="headerlink" title="支持黑白名单"></a>支持黑白名单</h2><h3 id="White-list-rules"><a href="#White-list-rules" class="headerlink" title="White list rules"></a>White list rules</h3><p>redis-cli set whiteip ip<br>举例</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">redis-cli set white192.168.1.1 192.168.1.1</span><br></pre></td></tr></table></figure>
-<h3 id="Black-list-rules"><a href="#Black-list-rules" class="headerlink" title="Black list rules"></a>Black list rules</h3><p>redis-cli set ip ip<br>举例</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">redis-cli set 192.168.1.2 192.168.1.2</span><br></pre></td></tr></table></figure>
+<p>从gitlab的设置中将 token复制过来</p>
+<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/3.png" class="">
 
-<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>可以对具体的接口或者页面进行限流，而不用全局限制，block_second是锁定时间，单位为秒，这个时间可以自定义<br>参数也可以放到location里的if</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">location &#x2F; &#123;</span><br><span class="line">         root   html;</span><br><span class="line">         index  index.html index.htm;</span><br><span class="line">          </span><br><span class="line">       if ($document_uri ~* &quot;index.php&quot;)&#123;          </span><br><span class="line">         dynamic_limit_req zone&#x3D;two burst&#x3D;5 nodelay;</span><br><span class="line">         dynamic_limit_req_status 403;</span><br><span class="line">              &#125;</span><br><span class="line">       if ( $args ~ l&#x3D;(.*)$) &#123;</span><br><span class="line">             dynamic_limit_req zone&#x3D;one burst&#x3D;5 nodelay;</span><br><span class="line">             dynamic_limit_req_status 403; </span><br><span class="line">             &#125;</span><br><span class="line">         </span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
+<p>将复制的token粘贴到api token中，点ok</p>
+<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/4.png" class="">
 
-<h1 id="小知识"><a href="#小知识" class="headerlink" title="小知识"></a>小知识</h1><p>提取apache ab命令单独使用，进行压测</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd &#x2F;tmp</span><br><span class="line">yumdownloader httpd-tools</span><br><span class="line">rpm2cpio httpd-tools-2.4.6-80.el7.centos.1.x86_64.rpm| cpio -idmv </span><br><span class="line">cd &#x2F;tmp&#x2F;usr&#x2F;bin&#x2F;</span><br><span class="line">cp ab &#x2F;bin&#x2F;</span><br></pre></td></tr></table></figure>
+<p>在系统配置中找到Gitlab 将信息进行填写，Credentials 选择刚刚创建对的即可</p>
+<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/6.png" class="">
+<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/5.png" class="">
+
+
+<p>打开项目，编辑项目的构建触发器</p>
+<p>配置触发条件，复制jenkins URL</p>
+<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/7.png" class="">
+
+<p>生成Secret Token</p>
+<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/8.png" class="">
+
+
+<h1 id="4、获取jenkins-用户token"><a href="#4、获取jenkins-用户token" class="headerlink" title="4、获取jenkins 用户token"></a>4、获取jenkins 用户token</h1><p>注意：jenkins用户的token只能是用户自己查看，就算是admin 也看不了</p>
+<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/9.png" class="">
+
+
+<h1 id="5、配置gitlab"><a href="#5、配置gitlab" class="headerlink" title="5、配置gitlab"></a>5、配置gitlab</h1><p>URL 格式 ：<a href="http://username:api">http://username:api</a> token@jenkins调用url</p>
+<p>secret token 就是之前jenkins project里面生成的</p>
+<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/10.png" class="">
+
+<p>保存后 ，测试</p>
+<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/13.png" class="">
+
+
+<p>返回200 表明成功，而且jenkins已经自动跑了</p>
+<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/12.png" class="">
+
+
+
+
+
+
+
 ]]></content>
       <categories>
         <category>技术</category>
       </categories>
       <tags>
-        <tag>nginx</tag>
+        <tag>jenkins</tag>
+        <tag>gitlab</tag>
       </tags>
   </entry>
   <entry>
@@ -109,6 +140,46 @@
       </tags>
   </entry>
   <entry>
+    <title>nginx动态限流</title>
+    <url>/2018/07/10/2018-07-10-nginx-%E5%8A%A8%E6%80%81%E9%99%90%E6%B5%81/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>动态限流一般是lua+redis,需要添加lua模块，或者把nginx直接替换为openresty.这个涉及到自己实现lua脚本，对于小白是有些难度的，这里利用第三方模块去实现，比lua要简单些，快速实现动态限流。</p>
+<p>以下是nginx官方的第三方模块列表<br><a href="https://www.nginx.com/resources/wiki/modules/index.html" target="_blank" rel="noopener" title="NGINX 3rd Party Modules">NGINX 3rd Party Modules</a></p>
+<p>我们使用<a href="https://github.com/limithit/ngx_dynamic_limit_req_module" target="_blank" rel="noopener">ngx_dynamic_limit_req_module</a>，配合redis实现动态限流</p>
+<a id="more"></a>
+
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><h2 id="环境说明"><a href="#环境说明" class="headerlink" title="环境说明"></a>环境说明</h2><p>hiredis ： redis官方 C api<br>nginx   :  版本必须高于1.9.11.</p>
+<h2 id="下载并编译hiredis"><a href="#下载并编译hiredis" class="headerlink" title="下载并编译hiredis"></a>下载并编译hiredis</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[root hiredis]# wget https:&#x2F;&#x2F;github.com&#x2F;redis&#x2F;hiredis&#x2F;archive&#x2F;v0.13.3.tar.gz</span><br><span class="line">[root hiredis]# tar -zxf v0.13.3.tar.gz</span><br><span class="line">[root hiredis]# cd hiredis-0.13.3&#x2F;</span><br><span class="line">[root hiredis]# make</span><br><span class="line">[root hiredis]# make install</span><br><span class="line">mkdir -p &#x2F;usr&#x2F;local&#x2F;include&#x2F;hiredis &#x2F;usr&#x2F;local&#x2F;lib</span><br><span class="line">cp -a hiredis.h async.h read.h sds.h adapters &#x2F;usr&#x2F;local&#x2F;include&#x2F;hiredis</span><br><span class="line">cp -a libhiredis.so &#x2F;usr&#x2F;local&#x2F;lib&#x2F;libhiredis.so.0.13</span><br><span class="line">cd &#x2F;usr&#x2F;local&#x2F;lib &amp;&amp; ln -sf libhiredis.so.0.13 libhiredis.so</span><br><span class="line">cp -a libhiredis.a &#x2F;usr&#x2F;local&#x2F;lib</span><br><span class="line">mkdir -p &#x2F;usr&#x2F;local&#x2F;lib&#x2F;pkgconfig</span><br><span class="line">cp -a hiredis.pc &#x2F;usr&#x2F;local&#x2F;lib&#x2F;pkgconfig</span><br></pre></td></tr></table></figure>
+
+<h2 id="下载并安装nginx"><a href="#下载并安装nginx" class="headerlink" title="下载并安装nginx"></a>下载并安装nginx</h2><p>因为原生nginx没有upstream检查，需要添加第三方模块</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget https:&#x2F;&#x2F;github.com&#x2F;yaoweibin&#x2F;nginx_upstream_check_module&#x2F;archive&#x2F;master.zip</span><br><span class="line">unzip master.zip</span><br></pre></td></tr></table></figure>
+<p>开始安装nginx</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget http:&#x2F;&#x2F;nginx.org&#x2F;download&#x2F;nginx-1.14.0.tar.gz</span><br><span class="line">tar -zxf nginx-1.14.0.tar.gz</span><br><span class="line">cd nginx-1.14.0&#x2F;</span><br><span class="line"> .&#x2F;configure --prefix&#x3D;&#x2F;usr&#x2F;local&#x2F;nginx --with-pcre&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;pcre-8.42 --with-http_stub_status_module  --with-http_ssl_module --with-http_v2_module  --add-module&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;ngx_dynamic_limit_req_module-1.7 --add-module&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;nginx_upstream_check_module-master</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>检查hiredis是否安装成功，如果是not found,就建个软链</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ldd &#x2F;usr&#x2F;local&#x2F;nginx&#x2F;sbin&#x2F;nginx|grep libhiredis</span><br><span class="line">libhiredis.so.0.13 &#x3D;&gt; not found (0x00007fd0fa245000)</span><br><span class="line">#查看之前生成的 so文件路径并软链</span><br><span class="line">&#x2F;lib&#x2F;libhiredis.so.0.13 -&gt; &#x2F;usr&#x2F;local&#x2F;lib&#x2F;libhiredis.so.0.13</span><br></pre></td></tr></table></figure>
+
+<h2 id="这时候就可以装个redis了"><a href="#这时候就可以装个redis了" class="headerlink" title="这时候就可以装个redis了"></a>这时候就可以装个redis了</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum install redis -y</span><br><span class="line">systemctl start redis</span><br></pre></td></tr></table></figure>
+
+<h1 id="配置文件模板"><a href="#配置文件模板" class="headerlink" title="配置文件模板"></a>配置文件模板</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">worker_processes  2;</span><br><span class="line">events &#123;</span><br><span class="line">    worker_connections  1024;</span><br><span class="line">&#125;</span><br><span class="line">http &#123;</span><br><span class="line">    include       mime.types;</span><br><span class="line">    default_type  application&#x2F;octet-stream;</span><br><span class="line">    sendfile        on;</span><br><span class="line">    keepalive_timeout  65;</span><br><span class="line">    </span><br><span class="line">    dynamic_limit_req_zone $binary_remote_addr zone&#x3D;one:10m rate&#x3D;100r&#x2F;s redis&#x3D;127.0.0.1 block_second&#x3D;300;</span><br><span class="line">    dynamic_limit_req_zone $binary_remote_addr zone&#x3D;two:10m rate&#x3D;50r&#x2F;s redis&#x3D;127.0.0.1 block_second&#x3D;600;</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    server &#123;</span><br><span class="line">        listen       80;</span><br><span class="line">        server_name  localhost;</span><br><span class="line">        location &#x2F; &#123;</span><br><span class="line">            root   html;</span><br><span class="line">            index  index.html index.htm;</span><br><span class="line">            dynamic_limit_req zone&#x3D;one burst&#x3D;5 nodelay;</span><br><span class="line">            dynamic_limit_req_status 403;</span><br><span class="line">        &#125;</span><br><span class="line">        error_page   500 502 503 504  &#x2F;50x.html;</span><br><span class="line">        location &#x3D; &#x2F;50x.html &#123;</span><br><span class="line">            root   html;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    server &#123;</span><br><span class="line">        listen       80;</span><br><span class="line">        server_name  localhost2;</span><br><span class="line">        location &#x2F; &#123;</span><br><span class="line">            root   html;</span><br><span class="line">            index  index.html index.htm;</span><br><span class="line">            dynamic_limit_req zone&#x3D;two burst&#x3D;5 nodelay;</span><br><span class="line">            dynamic_limit_req_status 403;</span><br><span class="line">        &#125;</span><br><span class="line">        error_page   500 502 503 504  &#x2F;50x.html;</span><br><span class="line">        location &#x3D; &#x2F;50x.html &#123;</span><br><span class="line">            root   html;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="支持黑白名单"><a href="#支持黑白名单" class="headerlink" title="支持黑白名单"></a>支持黑白名单</h2><h3 id="White-list-rules"><a href="#White-list-rules" class="headerlink" title="White list rules"></a>White list rules</h3><p>redis-cli set whiteip ip<br>举例</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">redis-cli set white192.168.1.1 192.168.1.1</span><br></pre></td></tr></table></figure>
+<h3 id="Black-list-rules"><a href="#Black-list-rules" class="headerlink" title="Black list rules"></a>Black list rules</h3><p>redis-cli set ip ip<br>举例</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">redis-cli set 192.168.1.2 192.168.1.2</span><br></pre></td></tr></table></figure>
+
+<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>可以对具体的接口或者页面进行限流，而不用全局限制，block_second是锁定时间，单位为秒，这个时间可以自定义<br>参数也可以放到location里的if</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">location &#x2F; &#123;</span><br><span class="line">         root   html;</span><br><span class="line">         index  index.html index.htm;</span><br><span class="line">          </span><br><span class="line">       if ($document_uri ~* &quot;index.php&quot;)&#123;          </span><br><span class="line">         dynamic_limit_req zone&#x3D;two burst&#x3D;5 nodelay;</span><br><span class="line">         dynamic_limit_req_status 403;</span><br><span class="line">              &#125;</span><br><span class="line">       if ( $args ~ l&#x3D;(.*)$) &#123;</span><br><span class="line">             dynamic_limit_req zone&#x3D;one burst&#x3D;5 nodelay;</span><br><span class="line">             dynamic_limit_req_status 403; </span><br><span class="line">             &#125;</span><br><span class="line">         </span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="小知识"><a href="#小知识" class="headerlink" title="小知识"></a>小知识</h1><p>提取apache ab命令单独使用，进行压测</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd &#x2F;tmp</span><br><span class="line">yumdownloader httpd-tools</span><br><span class="line">rpm2cpio httpd-tools-2.4.6-80.el7.centos.1.x86_64.rpm| cpio -idmv </span><br><span class="line">cd &#x2F;tmp&#x2F;usr&#x2F;bin&#x2F;</span><br><span class="line">cp ab &#x2F;bin&#x2F;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>nginx</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>关于kubelet 频繁du, 产生大量io</title>
     <url>/2018/07/16/2018-07-16-kubernetes-kubelet%E9%A2%91%E7%B9%81du-io%E8%BF%87%E9%AB%98/</url>
     <content><![CDATA[<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>使用iotop查看io情况</p>
@@ -132,6 +203,70 @@
       <tags>
         <tag>kubernetes</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>kubernetes 容器 DNS 设置</title>
+    <url>/2020/04/01/2020-04-01-kubernetes%20%E5%AE%B9%E5%99%A8%20DNS%20%E8%AE%BE%E7%BD%AE/</url>
+    <content><![CDATA[<h1 id="添加默认配置"><a href="#添加默认配置" class="headerlink" title="添加默认配置"></a>添加默认配置</h1><p>在 kubernetes 中将 DNS 设置配置在 dnsConfig 配置项中， 而 dnsConfig 包含在 PodSpec 配置项中，因此 Pod 内所有容器都共享相同的 Network Namespace 。如下所示：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
+<p>即，在 nameservers 中多了 172.xxx.xxx.201 、 search 中多了 ns1.svc.cluster.local 和 my.dns.search.suffix 两项值，及多了 options ndots:2 edns0 配置。</p>
+<p>因此，直接通过 dnsConfig 进行配置后，默认是追加到当前默认配置中。</p>
+<a id="more"></a>
+
+<h1 id="DNS-策略"><a href="#DNS-策略" class="headerlink" title="DNS 策略"></a>DNS 策略</h1><p>在 kubernetes 中还提供了 dnsPolicy 决定 Pod 内预设 DNS 配置策略：</p>
+<ul>
+<li>None 无任何策略</li>
+<li>Default 默认</li>
+<li>ClusterFirst 集群 DNS 优先</li>
+<li>ClusterFirstWithHostNet 集群 DNS 优先，并伴随着使用宿主机网络</li>
+</ul>
+<h2 id="无策略-None"><a href="#无策略-None" class="headerlink" title="无策略 (None)"></a>无策略 (None)</h2><p>清除 Pod 预设 DNS 配置，当 dnsPolicy 设置成为这个值之后， kubernetes 不会为 Pod 预先加载任何逻辑用于判定得到 DNS 的配置。因此若将 dnsPolicy 设置为 None , 为了避免 Pod 里面没有 DNS 配置，最好通过 dnsConfig 来描述自定义的 DNS 参数。如下所示：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">None</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
+<h2 id="默认预设-Default"><a href="#默认预设-Default" class="headerlink" title="默认预设 (Default)"></a>默认预设 (Default)</h2><p>Pod 里面的 DNS 配置继承了宿主机上的 DNS 配置。即，该 Pod 的 DNS 配置与宿主机完全一致。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">Default</span></span><br></pre></td></tr></table></figure>
+<p>通过 cat /etc/resolv.conf 可查看到宿主机上的配置如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Dynamic resolv.conf(5) file <span class="keyword">for</span> glibc resolver(3) generated by resolvconf(8)</span></span><br><span class="line"><span class="meta">#</span><span class="bash">     DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN</span></span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
+<h2 id="集群优先-ClusterFirst"><a href="#集群优先-ClusterFirst" class="headerlink" title="集群优先 (ClusterFirst)"></a>集群优先 (ClusterFirst)</h2><p>与 Default 相反，会预先使用 kube-dns (或 CoreDNS ) 的信息当预设置参数写入到该 Pod 内的DNS配置。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
+<p>注 如设置了 hostNetwork = true 时，ClusterFirst 会被强制转化为 Default 。如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>注 设置 hostNetwork = true 之后，会让 Pod 与该节点公用相同的网络空间(网卡/路由等)</p>
+</blockquote>
+<h2 id="宿主机与-Kubernetes-共存-ClusterFirstWithHostNet"><a href="#宿主机与-Kubernetes-共存-ClusterFirstWithHostNet" class="headerlink" title="宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )"></a>宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )</h2><p>同时使用 hostNetwork 与 kube-dns 作为 Pod 预设 DNS 配置。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirstWithHostNet</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.k8s.local. svc.k8s.local. k8s.local.</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
+
+
+<p>此文章选自：<br>作者：走在成长的道路上<br>链接：<a href="https://www.jianshu.com/p/dbc063e190c9" target="_blank" rel="noopener">https://www.jianshu.com/p/dbc063e190c9</a></p>
+<p>​    </p>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>kubernetes</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello HEXO</title>
+    <url>/2020/07/23/2020-07-07-hello-world/</url>
+    <content><![CDATA[<h1 id="记录下blog服务变化"><a href="#记录下blog服务变化" class="headerlink" title="记录下blog服务变化"></a>记录下blog服务变化</h1><p>迁移blog 到hexo</p>
+]]></content>
+      <categories>
+        <category>生活</category>
+      </categories>
   </entry>
   <entry>
     <title>配置shadowsocks服务端</title>
@@ -189,58 +324,121 @@
       </tags>
   </entry>
   <entry>
-    <title>kubernetes 容器 DNS 设置</title>
-    <url>/2020/04/01/2020-04-01-kubernetes%20%E5%AE%B9%E5%99%A8%20DNS%20%E8%AE%BE%E7%BD%AE/</url>
-    <content><![CDATA[<h1 id="添加默认配置"><a href="#添加默认配置" class="headerlink" title="添加默认配置"></a>添加默认配置</h1><p>在 kubernetes 中将 DNS 设置配置在 dnsConfig 配置项中， 而 dnsConfig 包含在 PodSpec 配置项中，因此 Pod 内所有容器都共享相同的 Network Namespace 。如下所示：</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
-<p>即，在 nameservers 中多了 172.xxx.xxx.201 、 search 中多了 ns1.svc.cluster.local 和 my.dns.search.suffix 两项值，及多了 options ndots:2 edns0 配置。</p>
-<p>因此，直接通过 dnsConfig 进行配置后，默认是追加到当前默认配置中。</p>
+    <title>ss 命令输出详解</title>
+    <url>/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/</url>
+    <content><![CDATA[<h1 id="ss-命令输出详解"><a href="#ss-命令输出详解" class="headerlink" title="ss 命令输出详解"></a>ss 命令输出详解</h1><p>ss 全名socket statistics，是iproute2中的一员<br>ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？</p>
 <a id="more"></a>
 
-<h1 id="DNS-策略"><a href="#DNS-策略" class="headerlink" title="DNS 策略"></a>DNS 策略</h1><p>在 kubernetes 中还提供了 dnsPolicy 决定 Pod 内预设 DNS 配置策略：</p>
-<ul>
-<li>None 无任何策略</li>
-<li>Default 默认</li>
-<li>ClusterFirst 集群 DNS 优先</li>
-<li>ClusterFirstWithHostNet 集群 DNS 优先，并伴随着使用宿主机网络</li>
-</ul>
-<h2 id="无策略-None"><a href="#无策略-None" class="headerlink" title="无策略 (None)"></a>无策略 (None)</h2><p>清除 Pod 预设 DNS 配置，当 dnsPolicy 设置成为这个值之后， kubernetes 不会为 Pod 预先加载任何逻辑用于判定得到 DNS 的配置。因此若将 dnsPolicy 设置为 None , 为了避免 Pod 里面没有 DNS 配置，最好通过 dnsConfig 来描述自定义的 DNS 参数。如下所示：</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">None</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
-<h2 id="默认预设-Default"><a href="#默认预设-Default" class="headerlink" title="默认预设 (Default)"></a>默认预设 (Default)</h2><p>Pod 里面的 DNS 配置继承了宿主机上的 DNS 配置。即，该 Pod 的 DNS 配置与宿主机完全一致。</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">Default</span></span><br></pre></td></tr></table></figure>
-<p>通过 cat /etc/resolv.conf 可查看到宿主机上的配置如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Dynamic resolv.conf(5) file <span class="keyword">for</span> glibc resolver(3) generated by resolvconf(8)</span></span><br><span class="line"><span class="meta">#</span><span class="bash">     DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN</span></span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
-<h2 id="集群优先-ClusterFirst"><a href="#集群优先-ClusterFirst" class="headerlink" title="集群优先 (ClusterFirst)"></a>集群优先 (ClusterFirst)</h2><p>与 Default 相反，会预先使用 kube-dns (或 CoreDNS ) 的信息当预设置参数写入到该 Pod 内的DNS配置。</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
-<p>注 如设置了 hostNetwork = true 时，ClusterFirst 会被强制转化为 Default 。如下：</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>注 设置 hostNetwork = true 之后，会让 Pod 与该节点公用相同的网络空间(网卡/路由等)</p>
-</blockquote>
-<h2 id="宿主机与-Kubernetes-共存-ClusterFirstWithHostNet"><a href="#宿主机与-Kubernetes-共存-ClusterFirstWithHostNet" class="headerlink" title="宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )"></a>宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )</h2><p>同时使用 hostNetwork 与 kube-dns 作为 Pod 预设 DNS 配置。</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirstWithHostNet</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.k8s.local. svc.k8s.local. k8s.local.</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">[root@test]#</span><span class="bash"> ss -s</span></span><br><span class="line">Total: 26437 (kernel 27730)</span><br><span class="line">TCP:  31961 (estab 25762, closed 6003, orphaned 70, synrecv 0, timewait 5985/0), ports 0</span><br><span class="line"></span><br><span class="line">Transport Total   IP    IPv6</span><br><span class="line">\*     27730   -     -    </span><br><span class="line">RAW    0     0     0    </span><br><span class="line">UDP    21    13    8    </span><br><span class="line">TCP    25958   25073   885   </span><br><span class="line">INET   25979   25086   893   </span><br><span class="line">FRAG   0     0     0</span><br></pre></td></tr></table></figure>
 
 
-<p>此文章选自：<br>作者：走在成长的道路上<br>链接：<a href="https://www.jianshu.com/p/dbc063e190c9" target="_blank" rel="noopener">https://www.jianshu.com/p/dbc063e190c9</a></p>
-<p>​    </p>
+<p>Total: 26437 (kernel 27730) 是什么意思？为什么Total的值小于kernel？</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Transport Total   IP    IPv6</span><br><span class="line">\*     27730   -     -</span><br></pre></td></tr></table></figure>
+
+<p>* 又代表什么？</p>
+<p>网上全是千篇一律，对于输出格式的文档却没有说明</p>
+<p>输出格式共六个字段</p>
+<p>netid 它表示套接字类型和传输协议, 当它不明确时：tcp、udp、raw、u str是unix_stream的缩写，u_dgr是unix数据报套接字，nl是netlink，p_raw和p_dgr是raw和datagram数据包套接字</p>
+<p>第二列是状态。此处显示套接字状态。这些名称是标准TCP名称，但UNCON除外，它不能用于TCP，但对于其他类型的未连接的套接字是正常的。同样，可以隐藏此列。</p>
+<p>然后两列（recv-q和send-q）显示排队等待接收和发送的数据量。</p>
+<p>最后两列显示了套接字的本地地址和端口以及它的对等地址（如果套接字已连接）。 </p>
+<p>如果给出了选项-o、-e或-p，则不在固定位置显示选项，而是用空格对分隔：选项：值。如果值不是一个数字，它将以值列表的形式显示，括在（…）用逗号分隔</p>
+<p>关于* </p>
+<p>答：仅是和简单的打开、管理相关的sockets,而不管在内核级别的传输是什么层</p>
+<p>关于total 和kernel 的 数量不一致的解释：</p>
+<p>答:系统socket 使用后不会立即过期,所以 26437 是所有active sockets 减去过期sockets.。27730 是 连接到kernel sockets，包含（27730-26437）剩余的 还没有被 kernel清理的sockets。<br><a href="http://tweaked.io/guide/kernel/" target="_blank" rel="noopener">http://tweaked.io/guide/kernel/</a><br>这篇关于内核调优的页面很好地概述了内核如何处理套接字的概念，以及如何调整系统以更好地管理内核级别的套接字。</p>
+<p>硬翻外国文档</p>
+<p><a href="https://superuser.com/questions/885250/what-does-the-output-of-ss-s-mean" target="_blank" rel="noopener">https://superuser.com/questions/885250/what-does-the-output-of-ss-s-mean</a></p>
+<p>socket 和port 的区别</p>
+<p><a href="https://stackoverflow.com/questions/152457/what-is-the-difference-between-a-port-and-a-socket/152863#152863" target="_blank" rel="noopener">https://stackoverflow.com/questions/152457/what-is-the-difference-between-a-port-and-a-socket/152863#152863</a></p>
+<p>ss命令详解</p>
+<p><a href="https://www.cyberciti.biz/tips/linux-investigate-sockets-network-connections.html" target="_blank" rel="noopener">https://www.cyberciti.biz/tips/linux-investigate-sockets-network-connections.html</a></p>
+<p>Linux创建sockets原理</p>
+<p><a href="https://ops.tips/blog/how-linux-creates-sockets/" target="_blank" rel="noopener">https://ops.tips/blog/how-linux-creates-sockets/</a></p>
+<p>通过本文知道，kernel 的数值 是取得kernel 全部的sockets,而且不能知道 这些sockets 具体是被哪些占用，就算用不同的namespace，也是一样</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Create a bunch of sockets using our</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> example <span class="keyword">in</span> C</span></span><br><span class="line">./sockets.out</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Check that we have a bunch of sockets</span></span><br><span class="line">cat /proc/net/sockstat</span><br><span class="line">sockets: used 296</span><br><span class="line">TCP: inuse 5 orphan 0 tw 2 alloc 108 mem 3</span><br><span class="line">UDP: inuse 1 mem 0</span><br><span class="line">UDPLITE: inuse 0</span><br><span class="line">RAW: inuse 0</span><br><span class="line">FRAG: inuse 0 memory 0</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Create a network namespace</span></span><br><span class="line">ip netns add namespace1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Get into it</span></span><br><span class="line">ip netns exec namespace1 /bin/bash</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Check how `/proc/net/sockstat` shows the same</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> number of allocated sockets.</span></span><br><span class="line">TCP: inuse 0 orphan 0 tw 0 alloc 108 mem 3</span><br><span class="line">UDP: inuse 0 mem 0</span><br><span class="line">UDPLITE: inuse 0</span><br><span class="line">RAW: inuse 0</span><br><span class="line">FRAG: inuse 0 memory 0</span><br></pre></td></tr></table></figure>
+
 ]]></content>
       <categories>
         <category>技术</category>
       </categories>
       <tags>
-        <tag>kubernetes</tag>
+        <tag>centos</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>yum error: Failed to initialize NSS library on Centos 7</title>
+    <url>/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/</url>
+    <content><![CDATA[<h1 id="现象："><a href="#现象：" class="headerlink" title="现象："></a>现象：</h1><p>执行rpm或者yum 时候报错</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">error: Failed to initialize NSS library</span><br><span class="line">There was a problem importing one of the Python modules</span><br><span class="line">required to run yum. The error leading to this problem was:</span><br><span class="line"></span><br><span class="line">  cannot import name ts</span><br><span class="line"></span><br><span class="line">Please install a package which provides this module, or</span><br><span class="line">verify that the module is installed correctly.</span><br><span class="line"></span><br><span class="line">It's possible that the above module doesn't match the</span><br><span class="line">current version of Python, which is:</span><br><span class="line">2.7.5 (default, Aug 4 2017, 00:39:18)</span><br><span class="line">[GCC 4.8.5 20150623 (Red Hat 4.8.5-16)]</span><br><span class="line"></span><br><span class="line">If you cannot solve this problem yourself, please go to</span><br><span class="line">the yum faq at:</span><br><span class="line"> http://yum.baseurl.org/wiki/Faq</span><br></pre></td></tr></table></figure>
+
+
+
+<p>这是由于update不完全导致的</p>
+<p>查看yum.log日志发现</p>
+<p>nss-softokn-freebl 安装一半，或者相关nss依赖包没安装完成。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Apr 16 10:36:23 Installed: jemalloc-devel-3.6.0-1.el7.x86_64</span><br><span class="line">Apr 16 10:36:56 Updated: libgcc-4.8.5-39.el7.x86_64</span><br><span class="line">Apr 16 10:36:56 Updated: nss-softokn-freebl-3.44.0-8.el7_7.x86_64</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<h1 id="解决方式"><a href="#解决方式" class="headerlink" title="解决方式"></a>解决方式</h1><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nss-util-3.44.0-4.el7_7.x86_64.rpm</span><br><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nspr-4.21.0-1.el7.x86_64.rpm</span><br><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nss-util-3.44.0-4.el7_7.x86_64.rpm</span><br><span class="line"></span><br><span class="line">rpm2cpio nss-util-3.44.0-4.el7_7.x86_64.rpm |cpio -idmv</span><br><span class="line"></span><br><span class="line">cp ./usr/lib64/libnssutil3.so /lib64/ </span><br><span class="line"></span><br><span class="line">rpm2cpio nspr-4.21.0-1.el7.x86_64.rpm | cpio -idmv</span><br><span class="line"></span><br><span class="line">cp -R ./usr/lib64/* /usr/lib64/</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>centos</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>docker 异常处理集合</title>
+    <url>/2020/07/20/2020-07-20-docker-%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E9%9B%86%E5%90%88/</url>
+    <content><![CDATA[<h1 id="一、kernel-4-6-无法创建container"><a href="#一、kernel-4-6-无法创建container" class="headerlink" title="一、kernel-4.6 无法创建container"></a><strong>一、kernel-4.6 无法创建container</strong></h1><p> 4.0内核,docker官方推荐的是overlay2 做storage driver，但是，xfs文件系统在4.0上与docker不能兼容，需要更改文件系统为ext4。</p>
+<p> github链接</p>
+<p> <a href="https://github.com/docker/docker/issues/23930" target="_blank" rel="noopener">https://github.com/docker/docker/issues/23930</a></p>
+ <a id="more"></a>
+
+<p><strong>二、无法初始化docker</strong></p>
+<p> centos6升级到7后，storage driver是overlay的，graph无法初始化，需要把文件系统从ext4换为xfs</p>
+<p><strong>三、自定义docker配置(基于centos7)</strong></p>
+<p>之前喜欢把/var/lib/docker软链到特定的目录，会有异常bug,比如plugin无法使用，所以抛弃软链</p>
+<p>自己有个性化的设置，需要改docker.service</p>
+<p>-g 指定docker目录</p>
+<p>-s 指定storage driver</p>
+<p>-H 指定socket,监听ip/端口号</p>
+ <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sed -i '\/usr\/bin\/dockerd/aEnvironmentFile=/etc/sysconfig/docker'</span><br><span class="line">/usr/lib/systemd/system/docker.service</span><br><span class="line">sed -i s'/dockerd/dockerd $OPTIONS/' /usr/lib/systemd/system/docker.service</span><br><span class="line">echo 'OPTIONS="-g /data/docker -s overlay -H unix:///var/run/docker.sock -H 0.0.0.0:2375"'&gt;/etc/sysconfig/docker</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<p><strong>四、device or resource busy</strong></p>
+<p>有时候创建、删除、停止容器的时候，会报错如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker start c39206003c7a</span></span><br><span class="line">Error: Cannot start container c39206003c7a: Error getting container c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5 from driver devicemapper: Error mounting '/dev/mapper/docker-253:0-267081-c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5' on '/var/lib/docker/devicemapper/mnt/c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5': device or resource busy</span><br><span class="line">Error: failed to start one or more containers</span><br><span class="line"> </span><br><span class="line"><span class="meta">$</span><span class="bash"> docker rm c39206003c7a</span></span><br><span class="line">Error: Cannot destroy container c39206003c7a: Driver devicemapper failed to remove root filesystem c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5: Error running removeDevice</span><br><span class="line">Error: failed to remove one or more containers</span><br></pre></td></tr></table></figure>
+
+<p> 解决方式2种：</p>
+<p>4.1 出现问题一般是storage driver是devicemapper, 更换操作系统用Ubuntu的aufs或者redhat的overlay</p>
+<p>4.2 取消挂载</p>
+ <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">umount /var/lib/devicemapper/mnt/ 容器 id</span><br></pre></td></tr></table></figure>
+
+
+
+<p>4.3 执行命令</p>
+<p>如果状态是Dead的， 先尝试docker rm -f containerId</p>
+<p>如果不成功 执行   cat /proc/mounts | grep “mapper/docker” | awk ‘{print $2}’</p>
+<h1 id="五、busybox-nslookup-不能使用"><a href="#五、busybox-nslookup-不能使用" class="headerlink" title="五、busybox nslookup 不能使用"></a>五、busybox nslookup 不能使用</h1><p>1.29 开始修改了nslookup的解析方式。 推荐使用1.28</p>
+<p>官方issue： <a href="https://github.com/docker-library/busybox/issues/48" target="_blank" rel="noopener">https://github.com/docker-library/busybox/issues/48</a></p>
+<p>或者改用 -type=a </p>
+<h1 id="六、史诗级bug"><a href="#六、史诗级bug" class="headerlink" title="六、史诗级bug"></a>六、史诗级bug</h1><p>unregister_netdevice: waiting for lo to become free. Usage count = #</p>
+<p>issue: <a href="https://github.com/moby/moby/issues/5618" target="_blank" rel="noopener">https://github.com/moby/moby/issues/5618</a></p>
+<p>没有解决</p>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>docker</tag>
       </tags>
   </entry>
   <entry>
@@ -446,200 +644,6 @@
       </categories>
       <tags>
         <tag>kubernetes</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>jenkins与gitlab整合</title>
-    <url>/2018/07/09/2018-07-09-jenkins-gitlab-webhook/</url>
-    <content><![CDATA[<h1 id="1、环境说明"><a href="#1、环境说明" class="headerlink" title="1、环境说明"></a>1、环境说明</h1><p>jenkins: 2.68</p>
-<p>gitlab : 10.1.1</p>
-<p>tomcat ：6.0.18</p>
-<p><strong>注意：不同版本gitlab，配置webhook方式有差异，这里只展示当前版本</strong></p>
-<a id="more"></a>
-
-<h1 id="2、相关依赖包"><a href="#2、相关依赖包" class="headerlink" title="2、相关依赖包"></a>2、相关依赖包</h1><p>该功能需要jenkins 安装插件Gitlab Hook Plugin</p>
-<h2 id="2-1-jenkins在安装gitlab-hook-plugins提示失败"><a href="#2-1-jenkins在安装gitlab-hook-plugins提示失败" class="headerlink" title="2.1 jenkins在安装gitlab hook plugins提示失败:"></a>2.1 jenkins在安装gitlab hook plugins提示失败:</h2><p>问题 : gitlab hook plugin无法安装的原因是因为ruby-runtime无法安装</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">java.io.IOException: Failed to dynamically deploy this plugin</span><br><span class="line">at hudson.model.UpdateCenter$InstallationJob._run(UpdateCenter.java:1328)</span><br><span class="line">at hudson.model.UpdateCenter$DownloadJob.run(UpdateCenter.java:1126)</span><br><span class="line">at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)</span><br><span class="line">at java.util.concurrent.FutureTask.run(FutureTask.java:266)</span><br><span class="line">at hudson.remoting.AtmostOneThreadExecutor$Worker.run(AtmostOneThreadExecutor.java:110)</span><br><span class="line">at java.lang.Thread.run(Thread.java:745)</span><br><span class="line">Caused by: java.io.IOException: Failed to install ruby-runtime plugin</span><br><span class="line">at hudson.PluginManager.dynamicLoad(PluginManager.java:487)</span><br><span class="line">at hudson.model.UpdateCenter$InstallationJob._run(UpdateCenter.java:1324)</span><br><span class="line">... 5 more</span><br><span class="line">Caused by: java.io.IOException: Failed to initialize</span><br><span class="line">at hudson.ClassicPluginStrategy.load(ClassicPluginStrategy.java:441)</span><br><span class="line">at hudson.PluginManager.dynamicLoad(PluginManager.java:478)</span><br><span class="line">... 6 more</span><br><span class="line">Caused by: java.lang.ClassCircularityError: org&#x2F;jruby&#x2F;RubyClass</span><br><span class="line">at java.lang.Class.forName0(Native Method)</span><br><span class="line">at java.lang.Class.forName(Class.java:348)</span><br></pre></td></tr></table></figure>
-
-<p>这是官方issue <a href="https://issues.jenkins-ci.org/browse/JENKINS-31019" target="_blank" rel="noopener">https://issues.jenkins-ci.org/browse/JENKINS-31019</a></p>
-<p>处理方式：给jenkins的启动容器添加JAVA_OPTIONS，我这里是tomcat，所以添加JAVA_OPTS到catalina.sh</p>
- <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">JAVA_OPTS&#x3D;&quot;-Djava.awt.headless&#x3D;true -Dhudson.ClassicPluginStrategy.noBytecodeTransformer&#x3D;true&quot;</span><br></pre></td></tr></table></figure>
-
-<h1 id="3、配置gitlab认证"><a href="#3、配置gitlab认证" class="headerlink" title="3、配置gitlab认证"></a>3、配置gitlab认证</h1><img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/1.png" class="">
-
-<p>添加一个新的凭证</p>
-<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/2.png" class="">
-
-<p>从gitlab的设置中将 token复制过来</p>
-<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/3.png" class="">
-
-<p>将复制的token粘贴到api token中，点ok</p>
-<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/4.png" class="">
-
-<p>在系统配置中找到Gitlab 将信息进行填写，Credentials 选择刚刚创建对的即可</p>
-<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/6.png" class="">
-<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/5.png" class="">
-
-
-<p>打开项目，编辑项目的构建触发器</p>
-<p>配置触发条件，复制jenkins URL</p>
-<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/7.png" class="">
-
-<p>生成Secret Token</p>
-<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/8.png" class="">
-
-
-<h1 id="4、获取jenkins-用户token"><a href="#4、获取jenkins-用户token" class="headerlink" title="4、获取jenkins 用户token"></a>4、获取jenkins 用户token</h1><p>注意：jenkins用户的token只能是用户自己查看，就算是admin 也看不了</p>
-<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/9.png" class="">
-
-
-<h1 id="5、配置gitlab"><a href="#5、配置gitlab" class="headerlink" title="5、配置gitlab"></a>5、配置gitlab</h1><p>URL 格式 ：<a href="http://username:api">http://username:api</a> token@jenkins调用url</p>
-<p>secret token 就是之前jenkins project里面生成的</p>
-<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/10.png" class="">
-
-<p>保存后 ，测试</p>
-<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/13.png" class="">
-
-
-<p>返回200 表明成功，而且jenkins已经自动跑了</p>
-<img src="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/12.png" class="">
-
-
-
-
-
-
-
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>jenkins</tag>
-        <tag>gitlab</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello HEXO</title>
-    <url>/2020/07/23/2020-07-07-hello-world/</url>
-    <content><![CDATA[<h1 id="记录下blog服务变化"><a href="#记录下blog服务变化" class="headerlink" title="记录下blog服务变化"></a>记录下blog服务变化</h1><p>迁移blog 到hexo</p>
-]]></content>
-      <categories>
-        <category>生活</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>docker 异常处理集合</title>
-    <url>/2020/07/20/2020-07-20-docker-%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E9%9B%86%E5%90%88/</url>
-    <content><![CDATA[<h1 id="一、kernel-4-6-无法创建container"><a href="#一、kernel-4-6-无法创建container" class="headerlink" title="一、kernel-4.6 无法创建container"></a><strong>一、kernel-4.6 无法创建container</strong></h1><p> 4.0内核,docker官方推荐的是overlay2 做storage driver，但是，xfs文件系统在4.0上与docker不能兼容，需要更改文件系统为ext4。</p>
-<p> github链接</p>
-<p> <a href="https://github.com/docker/docker/issues/23930" target="_blank" rel="noopener">https://github.com/docker/docker/issues/23930</a></p>
-<p><strong>二、无法初始化docker</strong></p>
-<p> centos6升级到7后，storage driver是overlay的，graph无法初始化，需要把文件系统从ext4换为xfs</p>
-<p><strong>三、自定义docker配置(基于centos7)</strong></p>
-<p>之前喜欢把/var/lib/docker软链到特定的目录，会有异常bug,比如plugin无法使用，所以抛弃软链</p>
-<p>自己有个性化的设置，需要改docker.service</p>
-<p>-g 指定docker目录</p>
-<p>-s 指定storage driver</p>
-<p>-H 指定socket,监听ip/端口号</p>
- <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sed -i '\/usr\/bin\/dockerd/aEnvironmentFile=/etc/sysconfig/docker'</span><br><span class="line">/usr/lib/systemd/system/docker.service</span><br><span class="line">sed -i s'/dockerd/dockerd $OPTIONS/' /usr/lib/systemd/system/docker.service</span><br><span class="line">echo 'OPTIONS="-g /data/docker -s overlay -H unix:///var/run/docker.sock -H 0.0.0.0:2375"'&gt;/etc/sysconfig/docker</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-<p><strong>四、device or resource busy</strong></p>
-<p>有时候创建、删除、停止容器的时候，会报错如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker start c39206003c7a</span></span><br><span class="line">Error: Cannot start container c39206003c7a: Error getting container c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5 from driver devicemapper: Error mounting '/dev/mapper/docker-253:0-267081-c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5' on '/var/lib/docker/devicemapper/mnt/c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5': device or resource busy</span><br><span class="line">Error: failed to start one or more containers</span><br><span class="line"> </span><br><span class="line"><span class="meta">$</span><span class="bash"> docker rm c39206003c7a</span></span><br><span class="line">Error: Cannot destroy container c39206003c7a: Driver devicemapper failed to remove root filesystem c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5: Error running removeDevice</span><br><span class="line">Error: failed to remove one or more containers</span><br></pre></td></tr></table></figure>
-
-<p> 解决方式2种：</p>
-<p>4.1 出现问题一般是storage driver是devicemapper, 更换操作系统用Ubuntu的aufs或者redhat的overlay</p>
-<p>4.2 取消挂载</p>
- <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">umount /var/lib/devicemapper/mnt/ 容器 id</span><br></pre></td></tr></table></figure>
-
-
-
-<p>4.3 执行命令</p>
-<p>如果状态是Dead的， 先尝试docker rm -f containerId</p>
-<p>如果不成功 执行   cat /proc/mounts | grep “mapper/docker” | awk ‘{print $2}’</p>
-<h1 id="五、busybox-nslookup-不能使用"><a href="#五、busybox-nslookup-不能使用" class="headerlink" title="五、busybox nslookup 不能使用"></a>五、busybox nslookup 不能使用</h1><p>1.29 开始修改了nslookup的解析方式。 推荐使用1.28</p>
-<p>官方issue： <a href="https://github.com/docker-library/busybox/issues/48" target="_blank" rel="noopener">https://github.com/docker-library/busybox/issues/48</a></p>
-<p>或者改用 -type=a </p>
-<h1 id="六、史诗级bug"><a href="#六、史诗级bug" class="headerlink" title="六、史诗级bug"></a>六、史诗级bug</h1><p>unregister_netdevice: waiting for lo to become free. Usage count = #</p>
-<p>issue: <a href="https://github.com/moby/moby/issues/5618" target="_blank" rel="noopener">https://github.com/moby/moby/issues/5618</a></p>
-<p>没有解决</p>
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>yum error: Failed to initialize NSS library on Centos 7</title>
-    <url>/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/</url>
-    <content><![CDATA[<h1 id="现象："><a href="#现象：" class="headerlink" title="现象："></a>现象：</h1><p>执行rpm或者yum 时候报错</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">error: Failed to initialize NSS library</span><br><span class="line">There was a problem importing one of the Python modules</span><br><span class="line">required to run yum. The error leading to this problem was:</span><br><span class="line"></span><br><span class="line">  cannot import name ts</span><br><span class="line"></span><br><span class="line">Please install a package which provides this module, or</span><br><span class="line">verify that the module is installed correctly.</span><br><span class="line"></span><br><span class="line">It's possible that the above module doesn't match the</span><br><span class="line">current version of Python, which is:</span><br><span class="line">2.7.5 (default, Aug 4 2017, 00:39:18)</span><br><span class="line">[GCC 4.8.5 20150623 (Red Hat 4.8.5-16)]</span><br><span class="line"></span><br><span class="line">If you cannot solve this problem yourself, please go to</span><br><span class="line">the yum faq at:</span><br><span class="line"> http://yum.baseurl.org/wiki/Faq</span><br></pre></td></tr></table></figure>
-
-
-
-<p>这是由于update不完全导致的</p>
-<p>查看yum.log日志发现</p>
-<p>nss-softokn-freebl 安装一半，或者相关nss依赖包没安装完成。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Apr 16 10:36:23 Installed: jemalloc-devel-3.6.0-1.el7.x86_64</span><br><span class="line">Apr 16 10:36:56 Updated: libgcc-4.8.5-39.el7.x86_64</span><br><span class="line">Apr 16 10:36:56 Updated: nss-softokn-freebl-3.44.0-8.el7_7.x86_64</span><br></pre></td></tr></table></figure>
-
-<h1 id="解决方式"><a href="#解决方式" class="headerlink" title="解决方式"></a>解决方式</h1><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nss-util-3.44.0-4.el7_7.x86_64.rpm</span><br><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nspr-4.21.0-1.el7.x86_64.rpm</span><br><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nss-util-3.44.0-4.el7_7.x86_64.rpm</span><br><span class="line"></span><br><span class="line">rpm2cpio nss-util-3.44.0-4.el7_7.x86_64.rpm |cpio -idmv</span><br><span class="line"></span><br><span class="line">cp ./usr/lib64/libnssutil3.so /lib64/ </span><br><span class="line"></span><br><span class="line">rpm2cpio nspr-4.21.0-1.el7.x86_64.rpm | cpio -idmv</span><br><span class="line"></span><br><span class="line">cp -R ./usr/lib64/* /usr/lib64/</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>centos</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>ss 命令输出详解</title>
-    <url>/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/</url>
-    <content><![CDATA[<h1 id="ss-命令输出详解"><a href="#ss-命令输出详解" class="headerlink" title="ss 命令输出详解"></a>ss 命令输出详解</h1><p>ss 全名socket statistics，是iproute2中的一员<br>ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？</p>
-<a id="more"></a>
-
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">[root@test]#</span><span class="bash"> ss -s</span></span><br><span class="line">Total: 26437 (kernel 27730)</span><br><span class="line">TCP:  31961 (estab 25762, closed 6003, orphaned 70, synrecv 0, timewait 5985/0), ports 0</span><br><span class="line"></span><br><span class="line">Transport Total   IP    IPv6</span><br><span class="line">\*     27730   -     -    </span><br><span class="line">RAW    0     0     0    </span><br><span class="line">UDP    21    13    8    </span><br><span class="line">TCP    25958   25073   885   </span><br><span class="line">INET   25979   25086   893   </span><br><span class="line">FRAG   0     0     0</span><br></pre></td></tr></table></figure>
-
-
-<p>Total: 26437 (kernel 27730) 是什么意思？为什么Total的值小于kernel？</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Transport Total   IP    IPv6</span><br><span class="line">\*     27730   -     -</span><br></pre></td></tr></table></figure>
-
-<p>* 又代表什么？</p>
-<p>网上全是千篇一律，对于输出格式的文档却没有说明</p>
-<p>输出格式共六个字段</p>
-<p>netid 它表示套接字类型和传输协议, 当它不明确时：tcp、udp、raw、u str是unix_stream的缩写，u_dgr是unix数据报套接字，nl是netlink，p_raw和p_dgr是raw和datagram数据包套接字</p>
-<p>第二列是状态。此处显示套接字状态。这些名称是标准TCP名称，但UNCON除外，它不能用于TCP，但对于其他类型的未连接的套接字是正常的。同样，可以隐藏此列。</p>
-<p>然后两列（recv-q和send-q）显示排队等待接收和发送的数据量。</p>
-<p>最后两列显示了套接字的本地地址和端口以及它的对等地址（如果套接字已连接）。 </p>
-<p>如果给出了选项-o、-e或-p，则不在固定位置显示选项，而是用空格对分隔：选项：值。如果值不是一个数字，它将以值列表的形式显示，括在（…）用逗号分隔</p>
-<p>关于* </p>
-<p>答：仅是和简单的打开、管理相关的sockets,而不管在内核级别的传输是什么层</p>
-<p>关于total 和kernel 的 数量不一致的解释：</p>
-<p>答:系统socket 使用后不会立即过期,所以 26437 是所有active sockets 减去过期sockets.。27730 是 连接到kernel sockets，包含（27730-26437）剩余的 还没有被 kernel清理的sockets。<br><a href="http://tweaked.io/guide/kernel/" target="_blank" rel="noopener">http://tweaked.io/guide/kernel/</a><br>这篇关于内核调优的页面很好地概述了内核如何处理套接字的概念，以及如何调整系统以更好地管理内核级别的套接字。</p>
-<p>硬翻外国文档</p>
-<p><a href="https://superuser.com/questions/885250/what-does-the-output-of-ss-s-mean" target="_blank" rel="noopener">https://superuser.com/questions/885250/what-does-the-output-of-ss-s-mean</a></p>
-<p>socket 和port 的区别</p>
-<p><a href="https://stackoverflow.com/questions/152457/what-is-the-difference-between-a-port-and-a-socket/152863#152863" target="_blank" rel="noopener">https://stackoverflow.com/questions/152457/what-is-the-difference-between-a-port-and-a-socket/152863#152863</a></p>
-<p>ss命令详解</p>
-<p><a href="https://www.cyberciti.biz/tips/linux-investigate-sockets-network-connections.html" target="_blank" rel="noopener">https://www.cyberciti.biz/tips/linux-investigate-sockets-network-connections.html</a></p>
-<p>Linux创建sockets原理</p>
-<p><a href="https://ops.tips/blog/how-linux-creates-sockets/" target="_blank" rel="noopener">https://ops.tips/blog/how-linux-creates-sockets/</a></p>
-<p>通过本文知道，kernel 的数值 是取得kernel 全部的sockets,而且不能知道 这些sockets 具体是被哪些占用，就算用不同的namespace，也是一样</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Create a bunch of sockets using our</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> example <span class="keyword">in</span> C</span></span><br><span class="line">./sockets.out</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Check that we have a bunch of sockets</span></span><br><span class="line">cat /proc/net/sockstat</span><br><span class="line">sockets: used 296</span><br><span class="line">TCP: inuse 5 orphan 0 tw 2 alloc 108 mem 3</span><br><span class="line">UDP: inuse 1 mem 0</span><br><span class="line">UDPLITE: inuse 0</span><br><span class="line">RAW: inuse 0</span><br><span class="line">FRAG: inuse 0 memory 0</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Create a network namespace</span></span><br><span class="line">ip netns add namespace1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Get into it</span></span><br><span class="line">ip netns exec namespace1 /bin/bash</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Check how `/proc/net/sockstat` shows the same</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> number of allocated sockets.</span></span><br><span class="line">TCP: inuse 0 orphan 0 tw 0 alloc 108 mem 3</span><br><span class="line">UDP: inuse 0 mem 0</span><br><span class="line">UDPLITE: inuse 0</span><br><span class="line">RAW: inuse 0</span><br><span class="line">FRAG: inuse 0 memory 0</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>centos</tag>
       </tags>
   </entry>
 </search>

@@ -116,6 +116,8 @@
       <h1 id="一、kernel-4-6-无法创建container"><a href="#一、kernel-4-6-无法创建container" class="headerlink" title="一、kernel-4.6 无法创建container"></a><strong>一、kernel-4.6 无法创建container</strong></h1><p> 4.0内核,docker官方推荐的是overlay2 做storage driver，但是，xfs文件系统在4.0上与docker不能兼容，需要更改文件系统为ext4。</p>
 <p> github链接</p>
 <p> <a href="https://github.com/docker/docker/issues/23930" target="_blank" rel="noopener">https://github.com/docker/docker/issues/23930</a></p>
+ <a id="more"></a>
+
 <p><strong>二、无法初始化docker</strong></p>
 <p> centos6升级到7后，storage driver是overlay的，graph无法初始化，需要把文件系统从ext4换为xfs</p>
 <p><strong>三、自定义docker配置(基于centos7)</strong></p>

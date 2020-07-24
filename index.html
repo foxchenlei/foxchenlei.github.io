@@ -81,6 +81,80 @@
     
     
     
+    <article id="post-2020-07-24-ss命令详解" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/"
+    >ss 命令输出详解</a> 
+</h2>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/" class="article-date">
+  <time datetime="2020-07-23T16:00:00.000Z" itemprop="datePublished">2020-07-24</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a>
+  </div>
+
+      
+      
+      
+    </div>
+    
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <h1 id="ss-命令输出详解"><a href="#ss-命令输出详解" class="headerlink" title="ss 命令输出详解"></a>ss 命令输出详解</h1><p>ss 全名socket statistics，是iproute2中的一员<br>ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？</p>
+      
+      <a class="article-more-link" href="/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/">阅读更多...</a>
+      
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+    <footer class="article-footer">
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/centos/" rel="tag">centos</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+
+  
+  
+  
+
+  
+  
+  
+
+</article>
+    
     <article id="post-2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7" class="article article-type-post" itemscope
   itemprop="blogPost" data-scroll-reveal>
 
@@ -130,83 +204,8 @@
 <p>查看yum.log日志发现</p>
 <p>nss-softokn-freebl 安装一半，或者相关nss依赖包没安装完成。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Apr 16 10:36:23 Installed: jemalloc-devel-3.6.0-1.el7.x86_64</span><br><span class="line">Apr 16 10:36:56 Updated: libgcc-4.8.5-39.el7.x86_64</span><br><span class="line">Apr 16 10:36:56 Updated: nss-softokn-freebl-3.44.0-8.el7_7.x86_64</span><br></pre></td></tr></table></figure>
-
-<h1 id="解决方式"><a href="#解决方式" class="headerlink" title="解决方式"></a>解决方式</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nss-util-3.44.0-4.el7_7.x86_64.rpm</span><br><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nspr-4.21.0-1.el7.x86_64.rpm</span><br><span class="line">wget http://mirrors.cn99.com/centos/7/os/x86_64/Packages/nss-util-3.44.0-4.el7_7.x86_64.rpm</span><br><span class="line"></span><br><span class="line">rpm2cpio nss-util-3.44.0-4.el7_7.x86_64.rpm |cpio -idmv</span><br><span class="line"></span><br><span class="line">cp ./usr/lib64/libnssutil3.so /lib64/ </span><br><span class="line"></span><br><span class="line">rpm2cpio nspr-4.21.0-1.el7.x86_64.rpm | cpio -idmv</span><br><span class="line"></span><br><span class="line">cp -R ./usr/lib64/* /usr/lib64/</span><br></pre></td></tr></table></figure>
-
-
       
-      <!-- reward -->
-      
-    </div>
-    
-    
-      <!-- copyright -->
-      
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/centos/" rel="tag">centos</a></li></ul>
-
-
-    </footer>
-
-  </div>
-
-  
-
-  
-  
-  
-
-  
-  
-  
-
-</article>
-    
-    <article id="post-2020-07-24-ss命令详解" class="article article-type-post" itemscope
-  itemprop="blogPost" data-scroll-reveal>
-
-  <div class="article-inner">
-    
-    <header class="article-header">
-       
-<h2 itemprop="name">
-  <a class="article-title" href="/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/"
-    >ss 命令输出详解</a> 
-</h2>
- 
-
-    </header>
-    
-
-    
-    <div class="article-meta">
-      <a href="/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/" class="article-date">
-  <time datetime="2020-07-23T16:00:00.000Z" itemprop="datePublished">2020-07-24</time>
-</a>
-      
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a>
-  </div>
-
-      
-      
-      
-    </div>
-    
-
-    
-
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-      
-
-      
-      <h1 id="ss-命令输出详解"><a href="#ss-命令输出详解" class="headerlink" title="ss 命令输出详解"></a>ss 命令输出详解</h1><p>ss 全名socket statistics，是iproute2中的一员<br>ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？</p>
-      
-      <a class="article-more-link" href="/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/">阅读更多...</a>
+      <a class="article-more-link" href="/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/">阅读更多...</a>
       
       
       <!-- reward -->
@@ -351,41 +350,9 @@
       <h1 id="一、kernel-4-6-无法创建container"><a href="#一、kernel-4-6-无法创建container" class="headerlink" title="一、kernel-4.6 无法创建container"></a><strong>一、kernel-4.6 无法创建container</strong></h1><p> 4.0内核,docker官方推荐的是overlay2 做storage driver，但是，xfs文件系统在4.0上与docker不能兼容，需要更改文件系统为ext4。</p>
 <p> github链接</p>
 <p> <a href="https://github.com/docker/docker/issues/23930" target="_blank" rel="noopener">https://github.com/docker/docker/issues/23930</a></p>
-<p><strong>二、无法初始化docker</strong></p>
-<p> centos6升级到7后，storage driver是overlay的，graph无法初始化，需要把文件系统从ext4换为xfs</p>
-<p><strong>三、自定义docker配置(基于centos7)</strong></p>
-<p>之前喜欢把/var/lib/docker软链到特定的目录，会有异常bug,比如plugin无法使用，所以抛弃软链</p>
-<p>自己有个性化的设置，需要改docker.service</p>
-<p>-g 指定docker目录</p>
-<p>-s 指定storage driver</p>
-<p>-H 指定socket,监听ip/端口号</p>
- <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sed -i '\/usr\/bin\/dockerd/aEnvironmentFile=/etc/sysconfig/docker'</span><br><span class="line">/usr/lib/systemd/system/docker.service</span><br><span class="line">sed -i s'/dockerd/dockerd $OPTIONS/' /usr/lib/systemd/system/docker.service</span><br><span class="line">echo 'OPTIONS="-g /data/docker -s overlay -H unix:///var/run/docker.sock -H 0.0.0.0:2375"'&gt;/etc/sysconfig/docker</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-<p><strong>四、device or resource busy</strong></p>
-<p>有时候创建、删除、停止容器的时候，会报错如下：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker start c39206003c7a</span></span><br><span class="line">Error: Cannot start container c39206003c7a: Error getting container c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5 from driver devicemapper: Error mounting '/dev/mapper/docker-253:0-267081-c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5' on '/var/lib/docker/devicemapper/mnt/c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5': device or resource busy</span><br><span class="line">Error: failed to start one or more containers</span><br><span class="line"> </span><br><span class="line"><span class="meta">$</span><span class="bash"> docker rm c39206003c7a</span></span><br><span class="line">Error: Cannot destroy container c39206003c7a: Driver devicemapper failed to remove root filesystem c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5: Error running removeDevice</span><br><span class="line">Error: failed to remove one or more containers</span><br></pre></td></tr></table></figure>
-
-<p> 解决方式2种：</p>
-<p>4.1 出现问题一般是storage driver是devicemapper, 更换操作系统用Ubuntu的aufs或者redhat的overlay</p>
-<p>4.2 取消挂载</p>
- <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">umount /var/lib/devicemapper/mnt/ 容器 id</span><br></pre></td></tr></table></figure>
-
-
-
-<p>4.3 执行命令</p>
-<p>如果状态是Dead的， 先尝试docker rm -f containerId</p>
-<p>如果不成功 执行   cat /proc/mounts | grep “mapper/docker” | awk ‘{print $2}’</p>
-<h1 id="五、busybox-nslookup-不能使用"><a href="#五、busybox-nslookup-不能使用" class="headerlink" title="五、busybox nslookup 不能使用"></a>五、busybox nslookup 不能使用</h1><p>1.29 开始修改了nslookup的解析方式。 推荐使用1.28</p>
-<p>官方issue： <a href="https://github.com/docker-library/busybox/issues/48" target="_blank" rel="noopener">https://github.com/docker-library/busybox/issues/48</a></p>
-<p>或者改用 -type=a </p>
-<h1 id="六、史诗级bug"><a href="#六、史诗级bug" class="headerlink" title="六、史诗级bug"></a>六、史诗级bug</h1><p>unregister_netdevice: waiting for lo to become free. Usage count = #</p>
-<p>issue: <a href="https://github.com/moby/moby/issues/5618" target="_blank" rel="noopener">https://github.com/moby/moby/issues/5618</a></p>
-<p>没有解决</p>
-
+      
+      <a class="article-more-link" href="/2020/07/20/2020-07-20-docker-%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E9%9B%86%E5%90%88/">阅读更多...</a>
+      
       
       <!-- reward -->
       
