@@ -81,6 +81,159 @@
     
     
     
+    <article id="post-2018-07-10-nginx-动态限流" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/07/10/2018-07-10-nginx-%E5%8A%A8%E6%80%81%E9%99%90%E6%B5%81/"
+    >nginx动态限流</a> 
+</h2>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2018/07/10/2018-07-10-nginx-%E5%8A%A8%E6%80%81%E9%99%90%E6%B5%81/" class="article-date">
+  <time datetime="2018-07-09T16:00:00.000Z" itemprop="datePublished">2018-07-10</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a>
+  </div>
+
+      
+      
+      
+    </div>
+    
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>动态限流一般是lua+redis,需要添加lua模块，或者把nginx直接替换为openresty.这个涉及到自己实现lua脚本，对于小白是有些难度的，这里利用第三方模块去实现，比lua要简单些，快速实现动态限流。</p>
+<p>以下是nginx官方的第三方模块列表<br><a href="https://www.nginx.com/resources/wiki/modules/index.html" target="_blank" rel="noopener" title="NGINX 3rd Party Modules">NGINX 3rd Party Modules</a></p>
+<p>我们使用<a href="https://github.com/limithit/ngx_dynamic_limit_req_module" target="_blank" rel="noopener">ngx_dynamic_limit_req_module</a>，配合redis实现动态限流</p>
+      
+      <a class="article-more-link" href="/2018/07/10/2018-07-10-nginx-%E5%8A%A8%E6%80%81%E9%99%90%E6%B5%81/">阅读更多...</a>
+      
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+    <footer class="article-footer">
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/nginx/" rel="tag">nginx</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+
+  
+  
+  
+
+  
+  
+  
+
+</article>
+    
+    <article id="archives-2018-07-09-jenkins-gitlab-webhook" class="article article-type-archives" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/"
+    >jenkins与gitlab整合</a> 
+</h2>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/" class="article-date">
+  <time datetime="2018-07-08T16:00:00.000Z" itemprop="datePublished">2018-07-09</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a>
+  </div>
+
+      
+      
+      
+    </div>
+    
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <h1 id="1、环境说明"><a href="#1、环境说明" class="headerlink" title="1、环境说明"></a>1、环境说明</h1><p>jenkins: 2.68</p>
+<p>gitlab : 10.1.1</p>
+<p>tomcat ：6.0.18</p>
+<p><strong>注意：不同版本gitlab，配置webhook方式有差异，这里只展示当前版本</strong></p>
+      
+      <a class="article-more-link" href="/2018/07/09/2018-07-09-jenkins-gitlab-webhook/">阅读更多...</a>
+      
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+    <footer class="article-footer">
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/gitlab/" rel="tag">gitlab</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/jenkins/" rel="tag">jenkins</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+
+  
+  
+  
+
+  
+  
+  
+
+</article>
+    
     <article id="post-2017-12-15-基于sasl认证配置libvirt" class="article article-type-post" itemscope
   itemprop="blogPost" data-scroll-reveal>
 
