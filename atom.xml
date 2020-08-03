@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://foxchenlei.github.io/"/>
-  <updated>2020-08-03T07:39:15.425Z</updated>
+  <updated>2020-08-03T06:13:22.288Z</updated>
   <id>https://foxchenlei.github.io/</id>
   
   <author>
@@ -15,27 +15,6 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
-  
-  <entry>
-    <title>kubernetes 安装kube-router</title>
-    <link href="https://foxchenlei.github.io/2020/08/03/2020-08-03-kubernetes%E5%AE%89%E8%A3%85kube-router/"/>
-    <id>https://foxchenlei.github.io/2020/08/03/2020-08-03-kubernetes%E5%AE%89%E8%A3%85kube-router/</id>
-    <published>2020-08-02T16:00:00.000Z</published>
-    <updated>2020-08-03T07:39:15.425Z</updated>
-    
-    <summary type="html">
-    
-      &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;网上关于kubernetes网络部署的方案非常多，那为什么还要自己写这么一篇教程呢？因为这篇文章中将介绍一种较为少见的部署方式，使用kuberouter作为kubernetes系统网络组件，直接替换掉kubeproxy、flannel/calico等网络组件。使用这种部署方式的目的，是替换kube-proxy，减少iptables依赖，同时还能提供网络服务。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
-    
-    
-      <category term="kubernetes" scheme="https://foxchenlei.github.io/tags/kubernetes/"/>
-    
-  </entry>
   
   <entry>
     <title>kubernetes 问题集合</title>
@@ -67,6 +46,48 @@
   </entry>
   
   <entry>
+    <title>kubernetes 安装kube-router</title>
+    <link href="https://foxchenlei.github.io/2020/08/03/2020-08-03-kubernetes%E5%AE%89%E8%A3%85kube-router/"/>
+    <id>https://foxchenlei.github.io/2020/08/03/2020-08-03-kubernetes%E5%AE%89%E8%A3%85kube-router/</id>
+    <published>2020-08-02T16:00:00.000Z</published>
+    <updated>2020-08-03T08:02:26.971Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;网上关于kubernetes网络部署的方案非常多，那为什么还要自己写这么一篇教程呢？因为这篇文章中将介绍一种较为少见的部署方式，使用kuberouter作为kubernetes系统网络组件，直接替换掉kubeproxy、flannel/calico等网络组件。使用这种部署方式的目的，是替换kube-proxy，减少iptables依赖，同时还能提供网络服务。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+      <category term="kubernetes" scheme="https://foxchenlei.github.io/tags/kubernetes/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>ss 命令输出详解</title>
+    <link href="https://foxchenlei.github.io/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/"/>
+    <id>https://foxchenlei.github.io/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/</id>
+    <published>2020-07-23T16:00:00.000Z</published>
+    <updated>2020-07-24T07:34:44.398Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;ss-命令输出详解&quot;&gt;&lt;a href=&quot;#ss-命令输出详解&quot; class=&quot;headerlink&quot; title=&quot;ss 命令输出详解&quot;&gt;&lt;/a&gt;ss 命令输出详解&lt;/h1&gt;&lt;p&gt;ss 全名socket statistics，是iproute2中的一员&lt;br&gt;ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
+    
+    
+      <category term="centos" scheme="https://foxchenlei.github.io/tags/centos/"/>
+    
+  </entry>
+  
+  <entry>
     <title>yum error: Failed to initialize NSS library on Centos 7</title>
     <link href="https://foxchenlei.github.io/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/"/>
     <id>https://foxchenlei.github.io/2020/07/24/2020-07-24-yum-error-Failed-to-initialize-NSS-library-on-Centos-7/</id>
@@ -84,27 +105,6 @@
 &lt;p&gt;查看yum.log日志发现&lt;/p&gt;
 &lt;p&gt;nss-softokn-freebl 安装一半，或者相关nss依赖包没安装完成。&lt;/p&gt;
 &lt;figure class=&quot;highlight shell&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;Apr 16 10:36:23 Installed: jemalloc-devel-3.6.0-1.el7.x86_64&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;Apr 16 10:36:56 Updated: libgcc-4.8.5-39.el7.x86_64&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;Apr 16 10:36:56 Updated: nss-softokn-freebl-3.44.0-8.el7_7.x86_64&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-    
-    </summary>
-    
-    
-      <category term="技术" scheme="https://foxchenlei.github.io/categories/%E6%8A%80%E6%9C%AF/"/>
-    
-    
-      <category term="centos" scheme="https://foxchenlei.github.io/tags/centos/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>ss 命令输出详解</title>
-    <link href="https://foxchenlei.github.io/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/"/>
-    <id>https://foxchenlei.github.io/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/</id>
-    <published>2020-07-23T16:00:00.000Z</published>
-    <updated>2020-07-24T07:34:44.398Z</updated>
-    
-    <summary type="html">
-    
-      &lt;h1 id=&quot;ss-命令输出详解&quot;&gt;&lt;a href=&quot;#ss-命令输出详解&quot; class=&quot;headerlink&quot; title=&quot;ss 命令输出详解&quot;&gt;&lt;/a&gt;ss 命令输出详解&lt;/h1&gt;&lt;p&gt;ss 全名socket statistics，是iproute2中的一员&lt;br&gt;ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？&lt;/p&gt;
     
     </summary>
     

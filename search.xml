@@ -69,6 +69,46 @@
       </tags>
   </entry>
   <entry>
+    <title>nginx动态限流</title>
+    <url>/2018/07/10/2018-07-10-nginx-%E5%8A%A8%E6%80%81%E9%99%90%E6%B5%81/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>动态限流一般是lua+redis,需要添加lua模块，或者把nginx直接替换为openresty.这个涉及到自己实现lua脚本，对于小白是有些难度的，这里利用第三方模块去实现，比lua要简单些，快速实现动态限流。</p>
+<p>以下是nginx官方的第三方模块列表<br><a href="https://www.nginx.com/resources/wiki/modules/index.html" target="_blank" rel="noopener" title="NGINX 3rd Party Modules">NGINX 3rd Party Modules</a></p>
+<p>我们使用<a href="https://github.com/limithit/ngx_dynamic_limit_req_module" target="_blank" rel="noopener">ngx_dynamic_limit_req_module</a>，配合redis实现动态限流</p>
+<a id="more"></a>
+
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><h2 id="环境说明"><a href="#环境说明" class="headerlink" title="环境说明"></a>环境说明</h2><p>hiredis ： redis官方 C api<br>nginx   :  版本必须高于1.9.11.</p>
+<h2 id="下载并编译hiredis"><a href="#下载并编译hiredis" class="headerlink" title="下载并编译hiredis"></a>下载并编译hiredis</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[root hiredis]# wget https:&#x2F;&#x2F;github.com&#x2F;redis&#x2F;hiredis&#x2F;archive&#x2F;v0.13.3.tar.gz</span><br><span class="line">[root hiredis]# tar -zxf v0.13.3.tar.gz</span><br><span class="line">[root hiredis]# cd hiredis-0.13.3&#x2F;</span><br><span class="line">[root hiredis]# make</span><br><span class="line">[root hiredis]# make install</span><br><span class="line">mkdir -p &#x2F;usr&#x2F;local&#x2F;include&#x2F;hiredis &#x2F;usr&#x2F;local&#x2F;lib</span><br><span class="line">cp -a hiredis.h async.h read.h sds.h adapters &#x2F;usr&#x2F;local&#x2F;include&#x2F;hiredis</span><br><span class="line">cp -a libhiredis.so &#x2F;usr&#x2F;local&#x2F;lib&#x2F;libhiredis.so.0.13</span><br><span class="line">cd &#x2F;usr&#x2F;local&#x2F;lib &amp;&amp; ln -sf libhiredis.so.0.13 libhiredis.so</span><br><span class="line">cp -a libhiredis.a &#x2F;usr&#x2F;local&#x2F;lib</span><br><span class="line">mkdir -p &#x2F;usr&#x2F;local&#x2F;lib&#x2F;pkgconfig</span><br><span class="line">cp -a hiredis.pc &#x2F;usr&#x2F;local&#x2F;lib&#x2F;pkgconfig</span><br></pre></td></tr></table></figure>
+
+<h2 id="下载并安装nginx"><a href="#下载并安装nginx" class="headerlink" title="下载并安装nginx"></a>下载并安装nginx</h2><p>因为原生nginx没有upstream检查，需要添加第三方模块</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget https:&#x2F;&#x2F;github.com&#x2F;yaoweibin&#x2F;nginx_upstream_check_module&#x2F;archive&#x2F;master.zip</span><br><span class="line">unzip master.zip</span><br></pre></td></tr></table></figure>
+<p>开始安装nginx</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget http:&#x2F;&#x2F;nginx.org&#x2F;download&#x2F;nginx-1.14.0.tar.gz</span><br><span class="line">tar -zxf nginx-1.14.0.tar.gz</span><br><span class="line">cd nginx-1.14.0&#x2F;</span><br><span class="line"> .&#x2F;configure --prefix&#x3D;&#x2F;usr&#x2F;local&#x2F;nginx --with-pcre&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;pcre-8.42 --with-http_stub_status_module  --with-http_ssl_module --with-http_v2_module  --add-module&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;ngx_dynamic_limit_req_module-1.7 --add-module&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;nginx_upstream_check_module-master</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>检查hiredis是否安装成功，如果是not found,就建个软链</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ldd &#x2F;usr&#x2F;local&#x2F;nginx&#x2F;sbin&#x2F;nginx|grep libhiredis</span><br><span class="line">libhiredis.so.0.13 &#x3D;&gt; not found (0x00007fd0fa245000)</span><br><span class="line">#查看之前生成的 so文件路径并软链</span><br><span class="line">&#x2F;lib&#x2F;libhiredis.so.0.13 -&gt; &#x2F;usr&#x2F;local&#x2F;lib&#x2F;libhiredis.so.0.13</span><br></pre></td></tr></table></figure>
+
+<h2 id="这时候就可以装个redis了"><a href="#这时候就可以装个redis了" class="headerlink" title="这时候就可以装个redis了"></a>这时候就可以装个redis了</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum install redis -y</span><br><span class="line">systemctl start redis</span><br></pre></td></tr></table></figure>
+
+<h1 id="配置文件模板"><a href="#配置文件模板" class="headerlink" title="配置文件模板"></a>配置文件模板</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">worker_processes  2;</span><br><span class="line">events &#123;</span><br><span class="line">    worker_connections  1024;</span><br><span class="line">&#125;</span><br><span class="line">http &#123;</span><br><span class="line">    include       mime.types;</span><br><span class="line">    default_type  application&#x2F;octet-stream;</span><br><span class="line">    sendfile        on;</span><br><span class="line">    keepalive_timeout  65;</span><br><span class="line">    </span><br><span class="line">    dynamic_limit_req_zone $binary_remote_addr zone&#x3D;one:10m rate&#x3D;100r&#x2F;s redis&#x3D;127.0.0.1 block_second&#x3D;300;</span><br><span class="line">    dynamic_limit_req_zone $binary_remote_addr zone&#x3D;two:10m rate&#x3D;50r&#x2F;s redis&#x3D;127.0.0.1 block_second&#x3D;600;</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    server &#123;</span><br><span class="line">        listen       80;</span><br><span class="line">        server_name  localhost;</span><br><span class="line">        location &#x2F; &#123;</span><br><span class="line">            root   html;</span><br><span class="line">            index  index.html index.htm;</span><br><span class="line">            dynamic_limit_req zone&#x3D;one burst&#x3D;5 nodelay;</span><br><span class="line">            dynamic_limit_req_status 403;</span><br><span class="line">        &#125;</span><br><span class="line">        error_page   500 502 503 504  &#x2F;50x.html;</span><br><span class="line">        location &#x3D; &#x2F;50x.html &#123;</span><br><span class="line">            root   html;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    server &#123;</span><br><span class="line">        listen       80;</span><br><span class="line">        server_name  localhost2;</span><br><span class="line">        location &#x2F; &#123;</span><br><span class="line">            root   html;</span><br><span class="line">            index  index.html index.htm;</span><br><span class="line">            dynamic_limit_req zone&#x3D;two burst&#x3D;5 nodelay;</span><br><span class="line">            dynamic_limit_req_status 403;</span><br><span class="line">        &#125;</span><br><span class="line">        error_page   500 502 503 504  &#x2F;50x.html;</span><br><span class="line">        location &#x3D; &#x2F;50x.html &#123;</span><br><span class="line">            root   html;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="支持黑白名单"><a href="#支持黑白名单" class="headerlink" title="支持黑白名单"></a>支持黑白名单</h2><h3 id="White-list-rules"><a href="#White-list-rules" class="headerlink" title="White list rules"></a>White list rules</h3><p>redis-cli set whiteip ip<br>举例</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">redis-cli set white192.168.1.1 192.168.1.1</span><br></pre></td></tr></table></figure>
+<h3 id="Black-list-rules"><a href="#Black-list-rules" class="headerlink" title="Black list rules"></a>Black list rules</h3><p>redis-cli set ip ip<br>举例</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">redis-cli set 192.168.1.2 192.168.1.2</span><br></pre></td></tr></table></figure>
+
+<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>可以对具体的接口或者页面进行限流，而不用全局限制，block_second是锁定时间，单位为秒，这个时间可以自定义<br>参数也可以放到location里的if</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">location &#x2F; &#123;</span><br><span class="line">         root   html;</span><br><span class="line">         index  index.html index.htm;</span><br><span class="line">          </span><br><span class="line">       if ($document_uri ~* &quot;index.php&quot;)&#123;          </span><br><span class="line">         dynamic_limit_req zone&#x3D;two burst&#x3D;5 nodelay;</span><br><span class="line">         dynamic_limit_req_status 403;</span><br><span class="line">              &#125;</span><br><span class="line">       if ( $args ~ l&#x3D;(.*)$) &#123;</span><br><span class="line">             dynamic_limit_req zone&#x3D;one burst&#x3D;5 nodelay;</span><br><span class="line">             dynamic_limit_req_status 403; </span><br><span class="line">             &#125;</span><br><span class="line">         </span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="小知识"><a href="#小知识" class="headerlink" title="小知识"></a>小知识</h1><p>提取apache ab命令单独使用，进行压测</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd &#x2F;tmp</span><br><span class="line">yumdownloader httpd-tools</span><br><span class="line">rpm2cpio httpd-tools-2.4.6-80.el7.centos.1.x86_64.rpm| cpio -idmv </span><br><span class="line">cd &#x2F;tmp&#x2F;usr&#x2F;bin&#x2F;</span><br><span class="line">cp ab &#x2F;bin&#x2F;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>nginx</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>jenkins与gitlab整合</title>
     <url>/2018/07/09/2018-07-09-jenkins-gitlab-webhook/</url>
     <content><![CDATA[<h1 id="1、环境说明"><a href="#1、环境说明" class="headerlink" title="1、环境说明"></a>1、环境说明</h1><p>jenkins: 2.68</p>
@@ -140,77 +180,58 @@
       </tags>
   </entry>
   <entry>
-    <title>关于kubelet 频繁du, 产生大量io</title>
-    <url>/2018/07/16/2018-07-16-kubernetes-kubelet%E9%A2%91%E7%B9%81du-io%E8%BF%87%E9%AB%98/</url>
-    <content><![CDATA[<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>使用iotop查看io情况</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Total DISK READ :       9.79 M&#x2F;s | Total DISK WRITE :      24.66 K&#x2F;s</span><br><span class="line">Actual DISK READ:       8.21 M&#x2F;s | Actual DISK WRITE:       0.00 B&#x2F;s</span><br><span class="line">  TID  PRIO  USER     DISK READ  DISK WRITE  SWAPIN     IO&gt;    COMMAND                                                      </span><br><span class="line"> 5762 be&#x2F;7 root     1743.49 K&#x2F;s    0.00 B&#x2F;s  0.00 % 95.26 % du -s &#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay&#x2F;e~61f203cd85d130b629268078be9c07f4</span><br><span class="line"> 5721 be&#x2F;7 root      750.23 K&#x2F;s    0.00 B&#x2F;s  0.00 % 94.64 % du -s &#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay&#x2F;c~dd81ce0684eed62e983301a2bd67e694</span><br><span class="line">   41 be&#x2F;4 root        0.00 B&#x2F;s    0.00 B&#x2F;s  0.00 % 52.87 % [kswapd0]</span><br><span class="line"> 5758 be&#x2F;7 root      200.77 K&#x2F;s    0.00 B&#x2F;s  0.00 % 34.72 % du -s &#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay&#x2F;1~803fd9bf781dede9aad4c952530ff38c</span><br><span class="line"> 5761 be&#x2F;7 root      718.53 K&#x2F;s    0.00 B&#x2F;s  0.00 % 24.93 % du -s &#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay&#x2F;3~bdb22e8d3cdf465e4a205b1ef72cbd49</span><br><span class="line"> 5759 be&#x2F;7 root      109.19 K&#x2F;s    0.00 B&#x2F;s  0.00 % 17.49 % du -s &#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay&#x2F;3~be3fe72d2</span><br></pre></td></tr></table></figure>
-<p>发现有好多进程在执行du命令占用了大量的磁盘io，仔细察看是kubelet在调用，kubelet在统计磁盘信息。</p>
-<h1 id="分析过程"><a href="#分析过程" class="headerlink" title="分析过程"></a>分析过程</h1><p>线上环境因为磁盘压力,空间不足的情况出现过大量Pod被驱逐的情形,导致节点上的Pod出现大量被驱逐状态</p>
-<p><a href="https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/#evicting-end-user-pods" target="_blank" rel="noopener">k8s官方说明</a></p>
-<p>k8s默认在磁盘小于10%的时候,就会evict pod,导致线上pod不能正常启动了</p>
-<p>官方issue<br><a href="https://github.com/kubernetes/kubernetes/issues/23255" target="_blank" rel="noopener">https://github.com/kubernetes/kubernetes/issues/23255</a> </p>
+    <title>配置shadowsocks服务端</title>
+    <url>/2018/08/09/2018-08-09-%E9%85%8D%E7%BD%AEshadowscoks%E6%9C%8D%E5%8A%A1%E7%AB%AF/</url>
+    <content><![CDATA[<h1 id="安装shadowsocks"><a href="#安装shadowsocks" class="headerlink" title="安装shadowsocks"></a>安装shadowsocks</h1><p>以centos7 举例</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pip install shadowsocks</span><br></pre></td></tr></table></figure>
+
+<hr>
 <a id="more"></a>
 
-<h1 id="解决方式"><a href="#解决方式" class="headerlink" title="解决方式"></a>解决方式</h1><ul>
-<li>加大磁盘空间，尽量不触发du命令</li>
-<li>或者更换ssd，减小io</li>
-<li>还有一种是更换docker驱动overlay2，有待验证</li>
+<h1 id="配置shadowsocks"><a href="#配置shadowsocks" class="headerlink" title="配置shadowsocks"></a>配置shadowsocks</h1><p>shadowsocks有两种配置方法，一种是命令行参数配置，一种是配置文件。先来说说命令行配置</p>
+<h2 id="命令行参数配置"><a href="#命令行参数配置" class="headerlink" title="命令行参数配置"></a>命令行参数配置</h2><p>命令行参数如下：<br>|参数名 | 参数意义|<br>|:–|:–|<br>|-s | 服务器地址<br>|-p | 服务器端口号<br>|-k    |服务器密码<br>|-m    |服务器加密方式<br>|-t    |服务器超时时间<br>|-c    |配置文件路径<br>|–fast-open    |快速打开模式，仅Unix/Linux系统可用<br>|–workers    |工作者数量</p>
+<p>每次运行shadowsocks都将一大堆参数传进去是件很麻烦的事情。所以一般情况下都是采用配置文件的方式来配置的。然后通过-c参数将配置文件路径传入。</p>
+<h1 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h1><p>shadowsocks的配置文件是一个json形式的文件，各参数的意义和命令行参数意义相同。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;server&quot;:&quot;my_server_ip&quot;,</span><br><span class="line">    &quot;server_port&quot;:8388,</span><br><span class="line">    &quot;local_address&quot;: &quot;127.0.0.1&quot;,</span><br><span class="line">    &quot;local_port&quot;:1080,</span><br><span class="line">    &quot;password&quot;:&quot;mypassword&quot;,</span><br><span class="line">    &quot;timeout&quot;:300,</span><br><span class="line">    &quot;method&quot;:&quot;aes-256-cfb&quot;,</span><br><span class="line">    &quot;fast_open&quot;: false</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>服务器地址就写服务器的ip地址，不要写127.0.0.1。端口号可以自己写，但是不要占用其他服务的端口。本地地址和本地端口是客户端使用的，服务端可以不用理会。密码尽量采用复杂一点的密码，以保证安全性。加密方式使用aes-256-cfb就可以了。如果服务器是Linux系统的话，打开fast_open</p>
+<p>配置文件编辑完毕之后，就可以运行shadowsocks了。前台运行：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks&#x2F;config.json</span><br></pre></td></tr></table></figure>
+<p>后台运行和停止：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json -d start</span><br><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json -d stop</span><br></pre></td></tr></table></figure>
+<p>以上都是在root用户下运行的。以root方式运行可能会有一些安全问题。所以一般都是使用普通用户运行：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json --user nobody -d start</span><br></pre></td></tr></table></figure>
+
+<p>以上都需要自己手动运行命令来启动shadowsocks。要让shadowsocks在系统启动时自动运行，需要在/etc/rc.local中添加命令。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo ssserver -c &#x2F;etc&#x2F;shadowsocks.json --user nobody -d start</span><br></pre></td></tr></table></figure>
+
+<h1 id="shadowsocks优化"><a href="#shadowsocks优化" class="headerlink" title="shadowsocks优化"></a>shadowsocks优化</h1><h2 id="提高最大连接数"><a href="#提高最大连接数" class="headerlink" title="提高最大连接数"></a>提高最大连接数</h2><p>编辑/etc/security/limits.conf文件，添加以下两行：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">* soft nofile 51200</span><br><span class="line">* hard nofile 51200</span><br></pre></td></tr></table></figure>
+<p>然后，在启动shadowsocks服务器之前，先设置一下ulimit：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ulimit -n 51200</span><br></pre></td></tr></table></figure>
+<h2 id="调整内核参数"><a href="#调整内核参数" class="headerlink" title="调整内核参数"></a>调整内核参数</h2><p>调整内核参数的目标是：</p>
+<ul>
+<li>尽可能重用连接和端口号</li>
+<li>尽可能增大队列和缓冲区</li>
+<li>为高延迟和高流量选择合适的TCP拥塞算法</li>
 </ul>
+<p>下面是一个生产服务器的配置(/etc/sysctl.conf)，实例。如果不能使用，可能需要自己编译内核模块</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">fs.file-max &#x3D; 51200</span><br><span class="line"></span><br><span class="line">net.core.rmem_max &#x3D; 67108864</span><br><span class="line">net.core.wmem_max &#x3D; 67108864</span><br><span class="line">net.core.netdev_max_backlog &#x3D; 250000</span><br><span class="line">net.core.somaxconn &#x3D; 4096</span><br><span class="line"></span><br><span class="line">net.ipv4.tcp_syncookies &#x3D; 1</span><br><span class="line">net.ipv4.tcp_tw_reuse &#x3D; 1</span><br><span class="line">net.ipv4.tcp_tw_recycle &#x3D; 0</span><br><span class="line">net.ipv4.tcp_fin_timeout &#x3D; 30</span><br><span class="line">net.ipv4.tcp_keepalive_time &#x3D; 1200</span><br><span class="line">net.ipv4.ip_local_port_range &#x3D; 10000 65000</span><br><span class="line">net.ipv4.tcp_max_syn_backlog &#x3D; 8192</span><br><span class="line">net.ipv4.tcp_max_tw_buckets &#x3D; 5000</span><br><span class="line">net.ipv4.tcp_fastopen &#x3D; 3</span><br><span class="line">net.ipv4.tcp_mem &#x3D; 25600 51200 102400</span><br><span class="line">net.ipv4.tcp_rmem &#x3D; 4096 87380 67108864</span><br><span class="line">net.ipv4.tcp_wmem &#x3D; 4096 65536 67108864</span><br><span class="line">net.ipv4.tcp_mtu_probing &#x3D; 1</span><br><span class="line">net.ipv4.tcp_congestion_control &#x3D; hybla</span><br></pre></td></tr></table></figure>
+<p>修改之后需要运行sysctl -p来重载配置</p>
+<h3 id="转载于"><a href="#转载于" class="headerlink" title="转载于###"></a>转载于###</h3><p><a href="https://blog.csdn.net/u011054333/article/details/52496303" target="_blank" rel="noopener">https://blog.csdn.net/u011054333/article/details/52496303</a></p>
+<h1 id="docker-启动"><a href="#docker-启动" class="headerlink" title="docker 启动#"></a>docker 启动#</h1><p>有2个image可以选择<br>简单实用版</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -d -p 1984:1984 oddrationale&#x2F;docker-shadowsocks -s 0.0.0.0 -p 1984 -k $SSPASSWORD -m aes-256-cfb</span><br></pre></td></tr></table></figure>
+
+<p>持续更新，附加功能版(集成 kcptun、simple-obfs),具体参数可以查看hub.docker.com</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -dt --name ss -p 6443:6443 mritd&#x2F;shadowsocks -s &quot;-s 0.0.0.0 -p 6443 -m chacha20 -k test123 --fast-open&quot;</span><br></pre></td></tr></table></figure>
+
+
+
 ]]></content>
       <categories>
         <category>技术</category>
       </categories>
       <tags>
-        <tag>kubernetes</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hello HEXO</title>
-    <url>/2020/07/23/2020-07-07-hello-world/</url>
-    <content><![CDATA[<h1 id="记录下blog服务变化"><a href="#记录下blog服务变化" class="headerlink" title="记录下blog服务变化"></a>记录下blog服务变化</h1><p>迁移blog 到hexo</p>
-]]></content>
-      <categories>
-        <category>生活</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>nginx动态限流</title>
-    <url>/2018/07/10/2018-07-10-nginx-%E5%8A%A8%E6%80%81%E9%99%90%E6%B5%81/</url>
-    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>动态限流一般是lua+redis,需要添加lua模块，或者把nginx直接替换为openresty.这个涉及到自己实现lua脚本，对于小白是有些难度的，这里利用第三方模块去实现，比lua要简单些，快速实现动态限流。</p>
-<p>以下是nginx官方的第三方模块列表<br><a href="https://www.nginx.com/resources/wiki/modules/index.html" target="_blank" rel="noopener" title="NGINX 3rd Party Modules">NGINX 3rd Party Modules</a></p>
-<p>我们使用<a href="https://github.com/limithit/ngx_dynamic_limit_req_module" target="_blank" rel="noopener">ngx_dynamic_limit_req_module</a>，配合redis实现动态限流</p>
-<a id="more"></a>
-
-<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><h2 id="环境说明"><a href="#环境说明" class="headerlink" title="环境说明"></a>环境说明</h2><p>hiredis ： redis官方 C api<br>nginx   :  版本必须高于1.9.11.</p>
-<h2 id="下载并编译hiredis"><a href="#下载并编译hiredis" class="headerlink" title="下载并编译hiredis"></a>下载并编译hiredis</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[root hiredis]# wget https:&#x2F;&#x2F;github.com&#x2F;redis&#x2F;hiredis&#x2F;archive&#x2F;v0.13.3.tar.gz</span><br><span class="line">[root hiredis]# tar -zxf v0.13.3.tar.gz</span><br><span class="line">[root hiredis]# cd hiredis-0.13.3&#x2F;</span><br><span class="line">[root hiredis]# make</span><br><span class="line">[root hiredis]# make install</span><br><span class="line">mkdir -p &#x2F;usr&#x2F;local&#x2F;include&#x2F;hiredis &#x2F;usr&#x2F;local&#x2F;lib</span><br><span class="line">cp -a hiredis.h async.h read.h sds.h adapters &#x2F;usr&#x2F;local&#x2F;include&#x2F;hiredis</span><br><span class="line">cp -a libhiredis.so &#x2F;usr&#x2F;local&#x2F;lib&#x2F;libhiredis.so.0.13</span><br><span class="line">cd &#x2F;usr&#x2F;local&#x2F;lib &amp;&amp; ln -sf libhiredis.so.0.13 libhiredis.so</span><br><span class="line">cp -a libhiredis.a &#x2F;usr&#x2F;local&#x2F;lib</span><br><span class="line">mkdir -p &#x2F;usr&#x2F;local&#x2F;lib&#x2F;pkgconfig</span><br><span class="line">cp -a hiredis.pc &#x2F;usr&#x2F;local&#x2F;lib&#x2F;pkgconfig</span><br></pre></td></tr></table></figure>
-
-<h2 id="下载并安装nginx"><a href="#下载并安装nginx" class="headerlink" title="下载并安装nginx"></a>下载并安装nginx</h2><p>因为原生nginx没有upstream检查，需要添加第三方模块</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget https:&#x2F;&#x2F;github.com&#x2F;yaoweibin&#x2F;nginx_upstream_check_module&#x2F;archive&#x2F;master.zip</span><br><span class="line">unzip master.zip</span><br></pre></td></tr></table></figure>
-<p>开始安装nginx</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget http:&#x2F;&#x2F;nginx.org&#x2F;download&#x2F;nginx-1.14.0.tar.gz</span><br><span class="line">tar -zxf nginx-1.14.0.tar.gz</span><br><span class="line">cd nginx-1.14.0&#x2F;</span><br><span class="line"> .&#x2F;configure --prefix&#x3D;&#x2F;usr&#x2F;local&#x2F;nginx --with-pcre&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;pcre-8.42 --with-http_stub_status_module  --with-http_ssl_module --with-http_v2_module  --add-module&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;ngx_dynamic_limit_req_module-1.7 --add-module&#x3D;&#x2F;usr&#x2F;local&#x2F;src&#x2F;nginx_upstream_check_module-master</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<p>检查hiredis是否安装成功，如果是not found,就建个软链</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ldd &#x2F;usr&#x2F;local&#x2F;nginx&#x2F;sbin&#x2F;nginx|grep libhiredis</span><br><span class="line">libhiredis.so.0.13 &#x3D;&gt; not found (0x00007fd0fa245000)</span><br><span class="line">#查看之前生成的 so文件路径并软链</span><br><span class="line">&#x2F;lib&#x2F;libhiredis.so.0.13 -&gt; &#x2F;usr&#x2F;local&#x2F;lib&#x2F;libhiredis.so.0.13</span><br></pre></td></tr></table></figure>
-
-<h2 id="这时候就可以装个redis了"><a href="#这时候就可以装个redis了" class="headerlink" title="这时候就可以装个redis了"></a>这时候就可以装个redis了</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum install redis -y</span><br><span class="line">systemctl start redis</span><br></pre></td></tr></table></figure>
-
-<h1 id="配置文件模板"><a href="#配置文件模板" class="headerlink" title="配置文件模板"></a>配置文件模板</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">worker_processes  2;</span><br><span class="line">events &#123;</span><br><span class="line">    worker_connections  1024;</span><br><span class="line">&#125;</span><br><span class="line">http &#123;</span><br><span class="line">    include       mime.types;</span><br><span class="line">    default_type  application&#x2F;octet-stream;</span><br><span class="line">    sendfile        on;</span><br><span class="line">    keepalive_timeout  65;</span><br><span class="line">    </span><br><span class="line">    dynamic_limit_req_zone $binary_remote_addr zone&#x3D;one:10m rate&#x3D;100r&#x2F;s redis&#x3D;127.0.0.1 block_second&#x3D;300;</span><br><span class="line">    dynamic_limit_req_zone $binary_remote_addr zone&#x3D;two:10m rate&#x3D;50r&#x2F;s redis&#x3D;127.0.0.1 block_second&#x3D;600;</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    server &#123;</span><br><span class="line">        listen       80;</span><br><span class="line">        server_name  localhost;</span><br><span class="line">        location &#x2F; &#123;</span><br><span class="line">            root   html;</span><br><span class="line">            index  index.html index.htm;</span><br><span class="line">            dynamic_limit_req zone&#x3D;one burst&#x3D;5 nodelay;</span><br><span class="line">            dynamic_limit_req_status 403;</span><br><span class="line">        &#125;</span><br><span class="line">        error_page   500 502 503 504  &#x2F;50x.html;</span><br><span class="line">        location &#x3D; &#x2F;50x.html &#123;</span><br><span class="line">            root   html;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    server &#123;</span><br><span class="line">        listen       80;</span><br><span class="line">        server_name  localhost2;</span><br><span class="line">        location &#x2F; &#123;</span><br><span class="line">            root   html;</span><br><span class="line">            index  index.html index.htm;</span><br><span class="line">            dynamic_limit_req zone&#x3D;two burst&#x3D;5 nodelay;</span><br><span class="line">            dynamic_limit_req_status 403;</span><br><span class="line">        &#125;</span><br><span class="line">        error_page   500 502 503 504  &#x2F;50x.html;</span><br><span class="line">        location &#x3D; &#x2F;50x.html &#123;</span><br><span class="line">            root   html;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="支持黑白名单"><a href="#支持黑白名单" class="headerlink" title="支持黑白名单"></a>支持黑白名单</h2><h3 id="White-list-rules"><a href="#White-list-rules" class="headerlink" title="White list rules"></a>White list rules</h3><p>redis-cli set whiteip ip<br>举例</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">redis-cli set white192.168.1.1 192.168.1.1</span><br></pre></td></tr></table></figure>
-<h3 id="Black-list-rules"><a href="#Black-list-rules" class="headerlink" title="Black list rules"></a>Black list rules</h3><p>redis-cli set ip ip<br>举例</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">redis-cli set 192.168.1.2 192.168.1.2</span><br></pre></td></tr></table></figure>
-
-<h3 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h3><p>可以对具体的接口或者页面进行限流，而不用全局限制，block_second是锁定时间，单位为秒，这个时间可以自定义<br>参数也可以放到location里的if</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">location &#x2F; &#123;</span><br><span class="line">         root   html;</span><br><span class="line">         index  index.html index.htm;</span><br><span class="line">          </span><br><span class="line">       if ($document_uri ~* &quot;index.php&quot;)&#123;          </span><br><span class="line">         dynamic_limit_req zone&#x3D;two burst&#x3D;5 nodelay;</span><br><span class="line">         dynamic_limit_req_status 403;</span><br><span class="line">              &#125;</span><br><span class="line">       if ( $args ~ l&#x3D;(.*)$) &#123;</span><br><span class="line">             dynamic_limit_req zone&#x3D;one burst&#x3D;5 nodelay;</span><br><span class="line">             dynamic_limit_req_status 403; </span><br><span class="line">             &#125;</span><br><span class="line">         </span><br><span class="line">     &#125;</span><br></pre></td></tr></table></figure>
-
-<h1 id="小知识"><a href="#小知识" class="headerlink" title="小知识"></a>小知识</h1><p>提取apache ab命令单独使用，进行压测</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd &#x2F;tmp</span><br><span class="line">yumdownloader httpd-tools</span><br><span class="line">rpm2cpio httpd-tools-2.4.6-80.el7.centos.1.x86_64.rpm| cpio -idmv </span><br><span class="line">cd &#x2F;tmp&#x2F;usr&#x2F;bin&#x2F;</span><br><span class="line">cp ab &#x2F;bin&#x2F;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>nginx</tag>
+        <tag>GreateWall</tag>
       </tags>
   </entry>
   <entry>
@@ -419,124 +440,185 @@
       </tags>
   </entry>
   <entry>
-    <title>kubernetes 安装kube-router</title>
-    <url>/2020/08/03/2020-08-03-kubernetes%E5%AE%89%E8%A3%85kube-router/</url>
-    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>网上关于kubernetes网络部署的方案非常多，那为什么还要自己写这么一篇教程呢？因为这篇文章中将介绍一种较为少见的部署方式，使用kuberouter作为kubernetes系统网络组件，直接替换掉kubeproxy、flannel/calico等网络组件。使用这种部署方式的目的，是替换kube-proxy，减少iptables依赖，同时还能提供网络服务。</p>
+    <title>kubernetes 容器 DNS 设置</title>
+    <url>/2020/04/01/2020-04-01-kubernetes%20%E5%AE%B9%E5%99%A8%20DNS%20%E8%AE%BE%E7%BD%AE/</url>
+    <content><![CDATA[<h1 id="添加默认配置"><a href="#添加默认配置" class="headerlink" title="添加默认配置"></a>添加默认配置</h1><p>在 kubernetes 中将 DNS 设置配置在 dnsConfig 配置项中， 而 dnsConfig 包含在 PodSpec 配置项中，因此 Pod 内所有容器都共享相同的 Network Namespace 。如下所示：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
+<p>即，在 nameservers 中多了 172.xxx.xxx.201 、 search 中多了 ns1.svc.cluster.local 和 my.dns.search.suffix 两项值，及多了 options ndots:2 edns0 配置。</p>
+<p>因此，直接通过 dnsConfig 进行配置后，默认是追加到当前默认配置中。</p>
 <a id="more"></a>
 
-<h1 id="替代分析"><a href="#替代分析" class="headerlink" title="替代分析"></a>替代分析</h1><h2 id="Kube-router替代kube-proxy"><a href="#Kube-router替代kube-proxy" class="headerlink" title="Kube-router替代kube-proxy"></a>Kube-router替代kube-proxy</h2><p>kube-proxy的作用主要是用于监听API server中 service 和 endpoint的变化情况，并通过iptables等来为服务配置负载均衡（仅支持TCP和UDP）。kube-proxy 可以直接运行在物理机上，也可以以 static pod 或者 daemonset 的方式运行。</p>
-<p>Kube-proxy主要有以下技术特点：</p>
+<h1 id="DNS-策略"><a href="#DNS-策略" class="headerlink" title="DNS 策略"></a>DNS 策略</h1><p>在 kubernetes 中还提供了 dnsPolicy 决定 Pod 内预设 DNS 配置策略：</p>
 <ul>
-<li><p>底层默认使用iptables进行流量的转发</p>
-</li>
-<li><p>通过监听api server服务中的对象变化，实现service发现功能。</p>
-</li>
+<li>None 无任何策略</li>
+<li>Default 默认</li>
+<li>ClusterFirst 集群 DNS 优先</li>
+<li>ClusterFirstWithHostNet 集群 DNS 优先，并伴随着使用宿主机网络</li>
 </ul>
-<p>而kuberouter采用了基于相同技术但增加了更多负载均衡策略的IPVS来实现流量转发，服务发现的实现与kube-proxy一致。因此可以直接替代kube-proxy。</p>
-<h2 id="Kube-router代替flannel-Calico等网络组件"><a href="#Kube-router代替flannel-Calico等网络组件" class="headerlink" title="Kube-router代替flannel/Calico等网络组件"></a>Kube-router代替flannel/Calico等网络组件</h2><p>kubernetes 对网络的要求是：容器之间（包括同一台主机上的容器，和不同主机的容器）可以互相通信，容器和集群中所有的节点也能直接通信。</p>
-<p>在kube-router出现之前，kubernetes长期以来使用第三方模块来负责网络模块配置，其中flannel是其中较为常用的一个，以flannel为例。</p>
-<p>flannel在集群中的功能主要有以下两点：</p>
-<p>能够给每个 Node 分配互不冲突的网段，意味着集群内每个容器有着互不冲突的 IP 地址；（指定 docker 启动参数的方式指定网段）</p>
-<p>能够建立一个覆盖网络，通过这个覆盖网络，能将数据包原封不动传递到目标容器内。（这里传递通常是 UDP 数据包）</p>
-<p>在实际运行过程中，每个节点需要部署一个flannel服务，部署成功后会生成一个flannel.0的虚拟设备，同时会运行flanneld的进程，用以链接flannel.0和物理网卡。传输过程中的数据包通过路由规则判断，如果是本网段的访问，就会走 docker0 网桥；如果是跨网段，也就是要跨宿主机访问，就会将数据发往 flannel0。flanneld将数据包封装成底层通信包，协议包括UDP、Vxlan等，这里往往用的是UDP，这个UDP 的packet 会根据 etcd 存放的路由表（一般会缓存到主机内存里）找到目的容器 IP 所承载的宿主机 IP，不借助第三方路由设备的前提下，数据包发送到了宿主机上。此时目标宿主机的 flanneld 进程会对 UDP 包进行解包操作，转化成数据包原本的协议，最终根据主机内部路由流入到目标容器中。</p>
-<p>完成这一系列动作有两个核心的技术点：</p>
-<p>flannel分配虚拟网卡是基于TUN/TAP虚拟网卡技术。</p>
-<p>flannel是三层设备，利用backend对节点内的二层的数据包封包成UDP，再发送到目的节点的flanneld进行解包。</p>
-<p>在kuberouter中，这种网络管理机制由CNI（容器网络接口）+BGP协议实现的。</p>
-<p>Kube-router不像flannel一样采用子网管理的方式，而是利用kube-conroller-manager来做子网分配，每一个节点会根据cluster CIDR被分配到集群中独一无二的子网ip。Kube-router运行在集群中每个节点运行IBGP，同时自动将所有节点组成网络。所有的集群中的节点在集群中将组成可配置的私有自治网络。Kube-router将会广播pod CIDR，并且保存从同一个主机命名空间学习到的路由。</p>
-<p>子网IP的管理是由CNI的brige插件配合IPAM的host-local插件完成。</p>
-<h1 id="部署kube-router"><a href="#部署kube-router" class="headerlink" title="部署kube-router"></a>部署kube-router</h1><h2 id="依赖"><a href="#依赖" class="headerlink" title="依赖"></a>依赖</h2><ul>
-<li><p>kube-router 能够访问apiserver</p>
-<p>这边提供kubeconfig方式</p>
-</li>
-</ul>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">clusters:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">cluster:</span></span><br><span class="line">    <span class="attr">certificate-authority:</span> <span class="string">/var/run/secrets/kubernetes.io/serviceaccount/ca.crt</span></span><br><span class="line">    <span class="attr">server:</span> <span class="string">https://k8s.foxchan.com</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">contexts:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">context:</span></span><br><span class="line">    <span class="attr">cluster:</span> <span class="string">default</span></span><br><span class="line">    <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line">    <span class="attr">user:</span> <span class="string">default</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">current-context:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">users:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">name:</span> <span class="string">default</span></span><br><span class="line">  <span class="attr">user:</span></span><br><span class="line">    <span class="attr">tokenFile:</span> <span class="string">/var/run/secrets/kubernetes.io/serviceaccount/token</span></span><br></pre></td></tr></table></figure>
+<h2 id="无策略-None"><a href="#无策略-None" class="headerlink" title="无策略 (None)"></a>无策略 (None)</h2><p>清除 Pod 预设 DNS 配置，当 dnsPolicy 设置成为这个值之后， kubernetes 不会为 Pod 预先加载任何逻辑用于判定得到 DNS 的配置。因此若将 dnsPolicy 设置为 None , 为了避免 Pod 里面没有 DNS 配置，最好通过 dnsConfig 来描述自定义的 DNS 参数。如下所示：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">None</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
+<h2 id="默认预设-Default"><a href="#默认预设-Default" class="headerlink" title="默认预设 (Default)"></a>默认预设 (Default)</h2><p>Pod 里面的 DNS 配置继承了宿主机上的 DNS 配置。即，该 Pod 的 DNS 配置与宿主机完全一致。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">Default</span></span><br></pre></td></tr></table></figure>
+<p>通过 cat /etc/resolv.conf 可查看到宿主机上的配置如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Dynamic resolv.conf(5) file <span class="keyword">for</span> glibc resolver(3) generated by resolvconf(8)</span></span><br><span class="line"><span class="meta">#</span><span class="bash">     DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN</span></span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
+<h2 id="集群优先-ClusterFirst"><a href="#集群优先-ClusterFirst" class="headerlink" title="集群优先 (ClusterFirst)"></a>集群优先 (ClusterFirst)</h2><p>与 Default 相反，会预先使用 kube-dns (或 CoreDNS ) 的信息当预设置参数写入到该 Pod 内的DNS配置。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
+<p>注 如设置了 hostNetwork = true 时，ClusterFirst 会被强制转化为 Default 。如下：</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>注 设置 hostNetwork = true 之后，会让 Pod 与该节点公用相同的网络空间(网卡/路由等)</p>
+</blockquote>
+<h2 id="宿主机与-Kubernetes-共存-ClusterFirstWithHostNet"><a href="#宿主机与-Kubernetes-共存-ClusterFirstWithHostNet" class="headerlink" title="宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )"></a>宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )</h2><p>同时使用 hostNetwork 与 kube-dns 作为 Pod 预设 DNS 配置。</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirstWithHostNet</span></span><br></pre></td></tr></table></figure>
+<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.k8s.local. svc.k8s.local. k8s.local.</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
 
 
-
-<ul>
-<li>controller-manager必要配置参数</li>
-</ul>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">--cluster-cidr=10.244.0.0/16 \</span><br><span class="line">--allocate-node-cidrs=true \</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>直接在主机运行需要有ipset命令</li>
-<li>以daemonseset 运行需要kube-apiserver 和kubelet 同时开启–allow-privileged=true</li>
-<li>如果选择pod-to-pod 网络模式，需要部署CNI插件</li>
-</ul>
-<p>官方给的简单示例</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget -O /etc/cni/net.d/10-kuberouter.conf https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/cni/10-kuberouter.conf</span><br></pre></td></tr></table></figure>
-
-<h2 id="参数说明"><a href="#参数说明" class="headerlink" title="参数说明"></a>参数说明</h2><ul>
-<li>使用iptables实现网络策略限制. –run-firewall参数，可透传源IP。</li>
-<li>通过bgp实现路由策略.–run-router 参数</li>
-<li>通过lvs实现代理策略。 –run-service-proxy</li>
-</ul>
-<p>–run-firewall, –run-router, –run-service-proxy可以有选择地只启用kube-router所需的功能</p>
-<ul>
-<li>只提供入口防火墙：–run-firewall=true –run-service-proxy=false –run-router=false</li>
-<li>仅仅替换kube-proxy: –run-service-proxy=true –run-firewall=false –run-router=false</li>
-</ul>
-<p><strong>查看现有集群nodeCIDR划分</strong></p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl get nodes -o json | jq '.items[] | .spec'</span><br></pre></td></tr></table></figure>
-
-<h2 id="命令行汉化"><a href="#命令行汉化" class="headerlink" title="命令行汉化"></a>命令行汉化</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Usage of ./kube-router:</span><br><span class="line">      --advertise-cluster-ip                将该服务的集群IP添加到RIB，以便通告给BGP peers.</span><br><span class="line">      --advertise-external-ip               将服务的外部IP添加到RIB，以便将其通告给BGP peers.</span><br><span class="line">      --cleanup-config                      清理iptables规则，ipvs，ipset配置并退出.</span><br><span class="line">      --cluster-asn uint                    集群节点运行iBGP的ASN编号.</span><br><span class="line">      --cluster-cidr string                 群集中的CIDR范围。它被用来识别pods的范围.</span><br><span class="line">      --config-sync-period duration         apiserver配置同步之间的延迟（例如“5s”，“1m”）。必须大于0.（默认1m0s）</span><br><span class="line">      --enable-overlay                      当enable-overlay设置为true时，IP-in-IP隧道将用于跨不同子网中节点的pod-pod联网。如果设置为false，则不使用隧道，并且路由基础架构预计为不同子网中的节点之间的pod-pod联网路由流量（默认值为true）</span><br><span class="line">      --enable-pod-egress                   从Pod到群集外的SNAT流量。 （默认为true）</span><br><span class="line">      --hairpin-mode                        为每个服务端点添加iptable规则以支持流量管控.</span><br><span class="line">  -h, --help                                打印使用信息.</span><br><span class="line">      --hostname-override string            覆盖节点的NodeName。如果kube-router无法自动确定您的NodeName，请设置此项.</span><br><span class="line">      --iptables-sync-period duration       iptables规则同步之间的延迟（例如'5s'，'1m'）。必须大于0.（默认1m0s）</span><br><span class="line">      --ipvs-sync-period duration           ipvs config同步之间的延迟（例如'5s'，'1m'，'2h22m'）。必须大于0.（默认1m0s）</span><br><span class="line">      --kubeconfig string                   具有授权信息的kubeconfig文件的路径（主位置由主标志设置）。</span><br><span class="line">      --masquerade-all                      SNAT所有流量到群集IP /节点端口。</span><br><span class="line">      --master string                       Kubernetes API服务器的地址（覆盖kubeconfig中的任何值）。</span><br><span class="line">      --nodeport-bindon-all-ip              对于NodePort类型的服务，创建监听节点的所有IP的IPVS服务.</span><br><span class="line">      --nodes-full-mesh                     集群中的每个节点都将建立与其他节点的BGP对等关系。 （默认为true）</span><br><span class="line">      --peer-router-asns uintSlice          集群节点将向其通告集群ip和节点的pid cidr的BGP peers的ASN编号。 （默认[]）</span><br><span class="line">      --peer-router-ips ipSlice             所有节点将对等的外部路由器的IP地址，并通告集群ip和pod cidr。 （默认[]）</span><br><span class="line">      --peer-router-passwords stringSlice   用“--peer-router-ips”定义的BGP peers进行认证的密码。</span><br><span class="line">      --routes-sync-period duration         路线更新与广播之间的延迟（例如“5s”，“1m”，“2h22m”）。必须大于0.（默认1m0s）</span><br><span class="line">      --run-firewall                        启用网络策略 - 设置iptables为pod提供入口防火墙。 （默认为true）</span><br><span class="line">      --run-router                          启用Pod网络 - 通过iBGP发布并学习到Pod的路由。 （默认为true）</span><br><span class="line">      --run-service-proxy                   启用服务代理 - 为Kubernetes服务设置IPVS。 （默认为true）</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">## 安装</span><br><span class="line"></span><br><span class="line">**集群安装时没有选择kube-proxy插件**</span><br><span class="line"></span><br><span class="line">&gt; 从k8s1.14开始，可以在kubeadm init的时候指定组件是否安装</span><br><span class="line"></span><br><span class="line">先要创建kube-proxy configmap，然后修改yaml</span><br><span class="line"></span><br><span class="line">&#96;&#96;&#96;shell</span><br><span class="line">kubectl create configmap kube-router --namespace&#x3D;kube-system --from-file&#x3D;kubeconfig</span><br><span class="line">wget -o kubeadm-kuberouter-all-features.yaml https:&#x2F;&#x2F;raw.githubusercontent.com&#x2F;cloudnativelabs&#x2F;kube-router&#x2F;master&#x2F;daemonset&#x2F;kubeadm-kuberouter-all-features.yaml</span><br></pre></td></tr></table></figure>
-
-<p>修改yaml，去访问之前生成的kubeconfig</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="string">...</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">cni-conf-dir</span></span><br><span class="line">          <span class="attr">mountPath:</span> <span class="string">/etc/cni/net.d</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">kubeconfig</span></span><br><span class="line">          <span class="attr">mountPath:</span> <span class="string">/var/lib/kube-router</span></span><br><span class="line">          <span class="attr">readOnly:</span> <span class="literal">true</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">xtables-lock</span></span><br><span class="line">          <span class="attr">mountPath:</span> <span class="string">/run/xtables.lock</span></span><br><span class="line">          <span class="attr">readOnly:</span> <span class="literal">false</span></span><br><span class="line"><span class="string">...</span></span><br><span class="line">      <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">lib-modules</span></span><br><span class="line">        <span class="attr">hostPath:</span></span><br><span class="line">          <span class="attr">path:</span> <span class="string">/lib/modules</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">cni-conf-dir</span></span><br><span class="line">        <span class="attr">hostPath:</span></span><br><span class="line">          <span class="attr">path:</span> <span class="string">/etc/cni/net.d</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">kube-router-cfg</span></span><br><span class="line">        <span class="attr">configMap:</span></span><br><span class="line">          <span class="attr">name:</span> <span class="string">kube-router-cfg</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">kubeconfig</span></span><br><span class="line">        <span class="attr">configMap:</span></span><br><span class="line">          <span class="attr">name:</span> <span class="string">kube-router</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">xtables-lock</span></span><br><span class="line">        <span class="attr">hostPath:</span></span><br><span class="line">          <span class="attr">path:</span> <span class="string">/run/xtables.lock</span></span><br><span class="line">          <span class="attr">type:</span> <span class="string">FileOrCreate</span></span><br><span class="line"><span class="string">...</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>集群已经有kube-proxy</strong></p>
-<p>只是进行替换</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter-all-features.yaml</span><br></pre></td></tr></table></figure>
-
-<p>安装完成后，清理iptables</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl -n kube-system delete ds kube-proxy</span><br><span class="line">docker run --privileged -v /lib/modules:/lib/modules --net=host k8s.gcr.io/kube-proxy-amd64:v1.17.9 kube-proxy --cleanup</span><br></pre></td></tr></table></figure>
-
-<h1 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h1><h2 id="负载均衡调度算法"><a href="#负载均衡调度算法" class="headerlink" title="负载均衡调度算法"></a>负载均衡调度算法</h2><p>Kube-router使用LVS作为服务代理。 LVS支持丰富的<a href="http://kb.linuxvirtualserver.org/wiki/IPVS#Job_Scheduling_Algorithms" target="_blank" rel="noopener">调度算法</a>。您可以为该服务添加注释以选择一个调度算法。当一个服务没有注释时，默认情况下选择“轮询”调度策略</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">For least connection scheduling use:</span><br><span class="line">kubectl annotate service my-service "kube-router.io/service.scheduler=lc"</span><br><span class="line">For round-robin scheduling use:</span><br><span class="line">kubectl annotate service my-service "kube-router.io/service.scheduler=rr"</span><br><span class="line">For source hashing scheduling use:</span><br><span class="line">kubectl annotate service my-service "kube-router.io/service.scheduler=sh"</span><br><span class="line">For destination hashing scheduling use:</span><br><span class="line">kubectl annotate service my-service "kube-router.io/service.scheduler=dh"</span><br></pre></td></tr></table></figure>
-
-<h2 id="Direct-server-return"><a href="#Direct-server-return" class="headerlink" title="Direct server return"></a>Direct server return</h2><p>请阅读以下博客，了解如何结合使用DSR和“–advertise-external-ip”构建高度可扩展和可用的入口。 <a href="https://cloudnativelabs.github.io/post/2017-11-01-kube-high-available-ingress/" target="_blank" rel="noopener">https://cloudnativelabs.github.io/post/2017-11-01-kube-high-available-ingress/</a><br>您可以为每个服务启用DSR（直接服务器返回）功能。当启用的服务端点将直接响应客户端通过签署服务代理。启用DSR时，Kube-router将使用LVS的隧道模式来实现此功能。<br>要启用DSR，您需要使用kube-router.io/service.dsr = tunnel注释来注释服务。例如，</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl annotate service my-service "kube-router.io/service.dsr=tunnel"</span><br></pre></td></tr></table></figure>
-
-<p>在当前的实现中，当在服务上应用注释时，DSR将仅适用于外部IP。<br>此外，当使用DSR时，当前的实现不支持端口重新映射。所以你需要使用相同的端口和目标端口的服务<br>你需要在kube-router守护进程清单中启用hostIPC：true和hostPID：true。并且必须将主路径/var/run/docker.sock设置为kube-router的一个volumemount。<br>上述更改需要kube-router输入pod namespace，并在pod中创建ipip隧道，并将外部IP分配给VIP。<br>对于示例清单，请查看启用DSR功能的<a href="https://github.com/cloudnativelabs/kube-router/blob/v1.0.0/daemonset/kubeadm-kuberouter-all-features-dsr.yaml" target="_blank" rel="noopener">manifest</a></p>
-<h2 id="暴露服务"><a href="#暴露服务" class="headerlink" title="暴露服务"></a>暴露服务</h2><ul>
-<li>svc clusterip</li>
-</ul>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> kubectl expose nginx --target-port=80 --port=80</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl get svc nginx -o template --template=<span class="string">'&#123;&#123;.spec.clusterIP&#125;&#125;'</span></span></span><br><span class="line">10.254.116.179</span><br></pre></td></tr></table></figure>
-
-<p>在每台机器上查看lvs条目</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ipvsadm -Ln</span><br><span class="line">IP Virtual Server version 1.2.1 (size&#x3D;4096)</span><br><span class="line">Prot LocalAddress:Port Scheduler Flags</span><br><span class="line">  -&gt; RemoteAddress:Port           Forward Weight ActiveConn InActConn</span><br><span class="line">TCP  10.254.0.1:443 rr persistent 10800</span><br><span class="line">  -&gt; 172.26.6.1:6443              Masq    1      0          0</span><br><span class="line">TCP  10.254.116.179:80 rr 10800</span><br><span class="line">  -&gt; 10.254.11.2:80               Masq    1      0          0</span><br></pre></td></tr></table></figure>
-
-<p>发现本机SVCIP代理后端真实podip，使用rr算法，通过ip addr s可以看到每添加一个服务node节点上面的kube-dummy-if网卡就会增加一个虚IP</p>
-<ul>
-<li>svc session-affinity</li>
-</ul>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl delete svc nginx</span><br><span class="line">kubectl expose deploy nginx --target-port=80 --port=80 --session-affinity=ClientIP</span><br><span class="line">ipvsadm -Ln</span><br><span class="line">IP Virtual Server version 1.2.1 (size=4096)</span><br><span class="line">Prot LocalAddress:Port Scheduler Flags</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> RemoteAddress:Port           Forward Weight ActiveConn InActConn</span></span><br><span class="line">TCP  10.254.0.1:443 rr persistent 10800</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> 172.26.6.1:6443              Masq    1      0          0</span></span><br><span class="line">TCP  10.254.191.234:80 rr persistent 10800</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> 10.254.11.2:80               Masq    1      0          0</span></span><br><span class="line">我们可以看到 多个persistent，既lvs里面的持久链接</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>svc NodePort</li>
-</ul>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl delete svc nginx</span><br><span class="line">kubectl expose deploy nginx --target-port=80 --port=80 --type=NodePort</span><br><span class="line">ipvsadm -Ln</span><br><span class="line">IP Virtual Server version 1.2.1 (size=4096)</span><br><span class="line">Prot LocalAddress:Port Scheduler Flags</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> RemoteAddress:Port           Forward Weight ActiveConn InActConn</span></span><br><span class="line">TCP  172.26.6.3:31117 rr</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> 10.254.11.2:80               Masq    1      0          0</span></span><br><span class="line">TCP  10.254.0.1:443 rr persistent 10800</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> 172.26.6.1:6443              Masq    1      0          0</span></span><br><span class="line">TCP  10.254.102.188:80 rr</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> 10.254.11.2:80               Masq    1      0          0</span></span><br><span class="line">可以看到不仅有虚拟IP条目，还多了对应主机的lvs条目</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>更改算法</li>
-</ul>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl annotate service nginx "kube-router.io/service.scheduler=dh"</span><br></pre></td></tr></table></figure>
-
-<h2 id="network-policy"><a href="#network-policy" class="headerlink" title="network policy"></a>network policy</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl annotate ns prod "net.beta.kubernetes.io/network-policy=&#123;\"ingress\":&#123;\"isolation\":\"DefaultDeny\"&#125;&#125;"</span><br></pre></td></tr></table></figure>
-
-<p>测试可以看到其他命名空间ping不通该命名空间</p>
-<p>查看路由表</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">ip route s</span><br></pre></td></tr></table></figure>
-
-<p>查看bgp新信息</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">  kubectl --namespace=kube-system  <span class="built_in">exec</span> -it  kube-router-pk7fs /bin/bash </span></span><br><span class="line"><span class="meta">#</span><span class="bash">  gobgp neighbor -u 172.26.6.3 <span class="comment">#从哪些IP获得更新</span></span></span><br><span class="line">Peer          AS  Up/Down State       |#Received  Accepted</span><br><span class="line">172.26.6.2 64512 01:03:03 Establ      |        1         1</span><br><span class="line"><span class="meta">#</span><span class="bash">  gobgp global rib -u 172.26.6.3 <span class="comment">#global rib相当于路由表</span></span></span><br><span class="line">   Network              Next Hop             AS_PATH              Age        Attrs</span><br><span class="line">*&gt; 10.254.0.0/24        172.26.6.2                                01:03:24   [&#123;Origin: i&#125; &#123;LocalPref: 100&#125;]</span><br><span class="line">*&gt; 10.254.2.0/24        172.26.6.3                                00:00:32   [&#123;Origin: i&#125;]</span><br></pre></td></tr></table></figure>]]></content>
+<p>此文章选自：<br>作者：走在成长的道路上<br>链接：<a href="https://www.jianshu.com/p/dbc063e190c9" target="_blank" rel="noopener">https://www.jianshu.com/p/dbc063e190c9</a></p>
+<p>​    </p>
+]]></content>
       <categories>
         <category>技术</category>
       </categories>
       <tags>
         <tag>kubernetes</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello HEXO</title>
+    <url>/2020/07/23/2020-07-07-hello-world/</url>
+    <content><![CDATA[<h1 id="记录下blog服务变化"><a href="#记录下blog服务变化" class="headerlink" title="记录下blog服务变化"></a>记录下blog服务变化</h1><p>迁移blog 到hexo</p>
+]]></content>
+      <categories>
+        <category>生活</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>关于kubelet 频繁du, 产生大量io</title>
+    <url>/2018/07/16/2018-07-16-kubernetes-kubelet%E9%A2%91%E7%B9%81du-io%E8%BF%87%E9%AB%98/</url>
+    <content><![CDATA[<h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><p>使用iotop查看io情况</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Total DISK READ :       9.79 M&#x2F;s | Total DISK WRITE :      24.66 K&#x2F;s</span><br><span class="line">Actual DISK READ:       8.21 M&#x2F;s | Actual DISK WRITE:       0.00 B&#x2F;s</span><br><span class="line">  TID  PRIO  USER     DISK READ  DISK WRITE  SWAPIN     IO&gt;    COMMAND                                                      </span><br><span class="line"> 5762 be&#x2F;7 root     1743.49 K&#x2F;s    0.00 B&#x2F;s  0.00 % 95.26 % du -s &#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay&#x2F;e~61f203cd85d130b629268078be9c07f4</span><br><span class="line"> 5721 be&#x2F;7 root      750.23 K&#x2F;s    0.00 B&#x2F;s  0.00 % 94.64 % du -s &#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay&#x2F;c~dd81ce0684eed62e983301a2bd67e694</span><br><span class="line">   41 be&#x2F;4 root        0.00 B&#x2F;s    0.00 B&#x2F;s  0.00 % 52.87 % [kswapd0]</span><br><span class="line"> 5758 be&#x2F;7 root      200.77 K&#x2F;s    0.00 B&#x2F;s  0.00 % 34.72 % du -s &#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay&#x2F;1~803fd9bf781dede9aad4c952530ff38c</span><br><span class="line"> 5761 be&#x2F;7 root      718.53 K&#x2F;s    0.00 B&#x2F;s  0.00 % 24.93 % du -s &#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay&#x2F;3~bdb22e8d3cdf465e4a205b1ef72cbd49</span><br><span class="line"> 5759 be&#x2F;7 root      109.19 K&#x2F;s    0.00 B&#x2F;s  0.00 % 17.49 % du -s &#x2F;var&#x2F;lib&#x2F;docker&#x2F;overlay&#x2F;3~be3fe72d2</span><br></pre></td></tr></table></figure>
+<p>发现有好多进程在执行du命令占用了大量的磁盘io，仔细察看是kubelet在调用，kubelet在统计磁盘信息。</p>
+<h1 id="分析过程"><a href="#分析过程" class="headerlink" title="分析过程"></a>分析过程</h1><p>线上环境因为磁盘压力,空间不足的情况出现过大量Pod被驱逐的情形,导致节点上的Pod出现大量被驱逐状态</p>
+<p><a href="https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/#evicting-end-user-pods" target="_blank" rel="noopener">k8s官方说明</a></p>
+<p>k8s默认在磁盘小于10%的时候,就会evict pod,导致线上pod不能正常启动了</p>
+<p>官方issue<br><a href="https://github.com/kubernetes/kubernetes/issues/23255" target="_blank" rel="noopener">https://github.com/kubernetes/kubernetes/issues/23255</a> </p>
+<a id="more"></a>
+
+<h1 id="解决方式"><a href="#解决方式" class="headerlink" title="解决方式"></a>解决方式</h1><ul>
+<li>加大磁盘空间，尽量不触发du命令</li>
+<li>或者更换ssd，减小io</li>
+<li>还有一种是更换docker驱动overlay2，有待验证</li>
+</ul>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>kubernetes</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>docker 异常处理集合</title>
+    <url>/2020/07/20/2020-07-20-docker-%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E9%9B%86%E5%90%88/</url>
+    <content><![CDATA[<h1 id="一、kernel-4-6-无法创建container"><a href="#一、kernel-4-6-无法创建container" class="headerlink" title="一、kernel-4.6 无法创建container"></a><strong>一、kernel-4.6 无法创建container</strong></h1><p> 4.0内核,docker官方推荐的是overlay2 做storage driver，但是，xfs文件系统在4.0上与docker不能兼容，需要更改文件系统为ext4。</p>
+<p> github链接</p>
+<p> <a href="https://github.com/docker/docker/issues/23930" target="_blank" rel="noopener">https://github.com/docker/docker/issues/23930</a></p>
+ <a id="more"></a>
+
+<p><strong>二、无法初始化docker</strong></p>
+<p> centos6升级到7后，storage driver是overlay的，graph无法初始化，需要把文件系统从ext4换为xfs</p>
+<p><strong>三、自定义docker配置(基于centos7)</strong></p>
+<p>之前喜欢把/var/lib/docker软链到特定的目录，会有异常bug,比如plugin无法使用，所以抛弃软链</p>
+<p>自己有个性化的设置，需要改docker.service</p>
+<p>-g 指定docker目录</p>
+<p>-s 指定storage driver</p>
+<p>-H 指定socket,监听ip/端口号</p>
+ <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sed -i '\/usr\/bin\/dockerd/aEnvironmentFile=/etc/sysconfig/docker'</span><br><span class="line">/usr/lib/systemd/system/docker.service</span><br><span class="line">sed -i s'/dockerd/dockerd $OPTIONS/' /usr/lib/systemd/system/docker.service</span><br><span class="line">echo 'OPTIONS="-g /data/docker -s overlay -H unix:///var/run/docker.sock -H 0.0.0.0:2375"'&gt;/etc/sysconfig/docker</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<p><strong>四、device or resource busy</strong></p>
+<p>有时候创建、删除、停止容器的时候，会报错如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker start c39206003c7a</span></span><br><span class="line">Error: Cannot start container c39206003c7a: Error getting container c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5 from driver devicemapper: Error mounting '/dev/mapper/docker-253:0-267081-c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5' on '/var/lib/docker/devicemapper/mnt/c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5': device or resource busy</span><br><span class="line">Error: failed to start one or more containers</span><br><span class="line"> </span><br><span class="line"><span class="meta">$</span><span class="bash"> docker rm c39206003c7a</span></span><br><span class="line">Error: Cannot destroy container c39206003c7a: Driver devicemapper failed to remove root filesystem c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5: Error running removeDevice</span><br><span class="line">Error: failed to remove one or more containers</span><br></pre></td></tr></table></figure>
+
+<p> 解决方式2种：</p>
+<p>4.1 出现问题一般是storage driver是devicemapper, 更换操作系统用Ubuntu的aufs或者redhat的overlay</p>
+<p>4.2 取消挂载</p>
+ <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">umount /var/lib/devicemapper/mnt/ 容器 id</span><br></pre></td></tr></table></figure>
+
+
+
+<p>4.3 执行命令</p>
+<p>如果状态是Dead的， 先尝试docker rm -f containerId</p>
+<p>如果不成功 执行   cat /proc/mounts | grep “mapper/docker” | awk ‘{print $2}’</p>
+<h1 id="五、busybox-nslookup-不能使用"><a href="#五、busybox-nslookup-不能使用" class="headerlink" title="五、busybox nslookup 不能使用"></a>五、busybox nslookup 不能使用</h1><p>1.29 开始修改了nslookup的解析方式。 推荐使用1.28</p>
+<p>官方issue： <a href="https://github.com/docker-library/busybox/issues/48" target="_blank" rel="noopener">https://github.com/docker-library/busybox/issues/48</a></p>
+<p>或者改用 -type=a </p>
+<h1 id="六、史诗级bug"><a href="#六、史诗级bug" class="headerlink" title="六、史诗级bug"></a>六、史诗级bug</h1><p>unregister_netdevice: waiting for lo to become free. Usage count = #</p>
+<p>issue: <a href="https://github.com/moby/moby/issues/5618" target="_blank" rel="noopener">https://github.com/moby/moby/issues/5618</a></p>
+<p>没有解决</p>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ss 命令输出详解</title>
+    <url>/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/</url>
+    <content><![CDATA[<h1 id="ss-命令输出详解"><a href="#ss-命令输出详解" class="headerlink" title="ss 命令输出详解"></a>ss 命令输出详解</h1><p>ss 全名socket statistics，是iproute2中的一员<br>ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？</p>
+<a id="more"></a>
+
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">[root@test]#</span><span class="bash"> ss -s</span></span><br><span class="line">Total: 26437 (kernel 27730)</span><br><span class="line">TCP:  31961 (estab 25762, closed 6003, orphaned 70, synrecv 0, timewait 5985/0), ports 0</span><br><span class="line"></span><br><span class="line">Transport Total   IP    IPv6</span><br><span class="line">\*     27730   -     -    </span><br><span class="line">RAW    0     0     0    </span><br><span class="line">UDP    21    13    8    </span><br><span class="line">TCP    25958   25073   885   </span><br><span class="line">INET   25979   25086   893   </span><br><span class="line">FRAG   0     0     0</span><br></pre></td></tr></table></figure>
+
+
+<p>Total: 26437 (kernel 27730) 是什么意思？为什么Total的值小于kernel？</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Transport Total   IP    IPv6</span><br><span class="line">\*     27730   -     -</span><br></pre></td></tr></table></figure>
+
+<p>* 又代表什么？</p>
+<p>网上全是千篇一律，对于输出格式的文档却没有说明</p>
+<p>输出格式共六个字段</p>
+<p>netid 它表示套接字类型和传输协议, 当它不明确时：tcp、udp、raw、u str是unix_stream的缩写，u_dgr是unix数据报套接字，nl是netlink，p_raw和p_dgr是raw和datagram数据包套接字</p>
+<p>第二列是状态。此处显示套接字状态。这些名称是标准TCP名称，但UNCON除外，它不能用于TCP，但对于其他类型的未连接的套接字是正常的。同样，可以隐藏此列。</p>
+<p>然后两列（recv-q和send-q）显示排队等待接收和发送的数据量。</p>
+<p>最后两列显示了套接字的本地地址和端口以及它的对等地址（如果套接字已连接）。 </p>
+<p>如果给出了选项-o、-e或-p，则不在固定位置显示选项，而是用空格对分隔：选项：值。如果值不是一个数字，它将以值列表的形式显示，括在（…）用逗号分隔</p>
+<p>关于* </p>
+<p>答：仅是和简单的打开、管理相关的sockets,而不管在内核级别的传输是什么层</p>
+<p>关于total 和kernel 的 数量不一致的解释：</p>
+<p>答:系统socket 使用后不会立即过期,所以 26437 是所有active sockets 减去过期sockets.。27730 是 连接到kernel sockets，包含（27730-26437）剩余的 还没有被 kernel清理的sockets。<br><a href="http://tweaked.io/guide/kernel/" target="_blank" rel="noopener">http://tweaked.io/guide/kernel/</a><br>这篇关于内核调优的页面很好地概述了内核如何处理套接字的概念，以及如何调整系统以更好地管理内核级别的套接字。</p>
+<p>硬翻外国文档</p>
+<p><a href="https://superuser.com/questions/885250/what-does-the-output-of-ss-s-mean" target="_blank" rel="noopener">https://superuser.com/questions/885250/what-does-the-output-of-ss-s-mean</a></p>
+<p>socket 和port 的区别</p>
+<p><a href="https://stackoverflow.com/questions/152457/what-is-the-difference-between-a-port-and-a-socket/152863#152863" target="_blank" rel="noopener">https://stackoverflow.com/questions/152457/what-is-the-difference-between-a-port-and-a-socket/152863#152863</a></p>
+<p>ss命令详解</p>
+<p><a href="https://www.cyberciti.biz/tips/linux-investigate-sockets-network-connections.html" target="_blank" rel="noopener">https://www.cyberciti.biz/tips/linux-investigate-sockets-network-connections.html</a></p>
+<p>Linux创建sockets原理</p>
+<p><a href="https://ops.tips/blog/how-linux-creates-sockets/" target="_blank" rel="noopener">https://ops.tips/blog/how-linux-creates-sockets/</a></p>
+<p>通过本文知道，kernel 的数值 是取得kernel 全部的sockets,而且不能知道 这些sockets 具体是被哪些占用，就算用不同的namespace，也是一样</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Create a bunch of sockets using our</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> example <span class="keyword">in</span> C</span></span><br><span class="line">./sockets.out</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Check that we have a bunch of sockets</span></span><br><span class="line">cat /proc/net/sockstat</span><br><span class="line">sockets: used 296</span><br><span class="line">TCP: inuse 5 orphan 0 tw 2 alloc 108 mem 3</span><br><span class="line">UDP: inuse 1 mem 0</span><br><span class="line">UDPLITE: inuse 0</span><br><span class="line">RAW: inuse 0</span><br><span class="line">FRAG: inuse 0 memory 0</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Create a network namespace</span></span><br><span class="line">ip netns add namespace1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Get into it</span></span><br><span class="line">ip netns exec namespace1 /bin/bash</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Check how `/proc/net/sockstat` shows the same</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> number of allocated sockets.</span></span><br><span class="line">TCP: inuse 0 orphan 0 tw 0 alloc 108 mem 3</span><br><span class="line">UDP: inuse 0 mem 0</span><br><span class="line">UDPLITE: inuse 0</span><br><span class="line">RAW: inuse 0</span><br><span class="line">FRAG: inuse 0 memory 0</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>centos</tag>
       </tags>
   </entry>
   <entry>
@@ -615,201 +697,130 @@
       </tags>
   </entry>
   <entry>
-    <title>ss 命令输出详解</title>
-    <url>/2020/07/24/2020-07-24-ss%E5%91%BD%E4%BB%A4%E8%AF%A6%E8%A7%A3/</url>
-    <content><![CDATA[<h1 id="ss-命令输出详解"><a href="#ss-命令输出详解" class="headerlink" title="ss 命令输出详解"></a>ss 命令输出详解</h1><p>ss 全名socket statistics，是iproute2中的一员<br>ss已经替代netstat，大热于江湖。但是关于ss命令输出的内容，是什么意思呢？</p>
+    <title>kubernetes 安装kube-router</title>
+    <url>/2020/08/03/2020-08-03-kubernetes%E5%AE%89%E8%A3%85kube-router/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>网上关于kubernetes网络部署的方案非常多，那为什么还要自己写这么一篇教程呢？因为这篇文章中将介绍一种较为少见的部署方式，使用kuberouter作为kubernetes系统网络组件，直接替换掉kubeproxy、flannel/calico等网络组件。使用这种部署方式的目的，是替换kube-proxy，减少iptables依赖，同时还能提供网络服务。</p>
 <a id="more"></a>
 
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">[root@test]#</span><span class="bash"> ss -s</span></span><br><span class="line">Total: 26437 (kernel 27730)</span><br><span class="line">TCP:  31961 (estab 25762, closed 6003, orphaned 70, synrecv 0, timewait 5985/0), ports 0</span><br><span class="line"></span><br><span class="line">Transport Total   IP    IPv6</span><br><span class="line">\*     27730   -     -    </span><br><span class="line">RAW    0     0     0    </span><br><span class="line">UDP    21    13    8    </span><br><span class="line">TCP    25958   25073   885   </span><br><span class="line">INET   25979   25086   893   </span><br><span class="line">FRAG   0     0     0</span><br></pre></td></tr></table></figure>
-
-
-<p>Total: 26437 (kernel 27730) 是什么意思？为什么Total的值小于kernel？</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Transport Total   IP    IPv6</span><br><span class="line">\*     27730   -     -</span><br></pre></td></tr></table></figure>
-
-<p>* 又代表什么？</p>
-<p>网上全是千篇一律，对于输出格式的文档却没有说明</p>
-<p>输出格式共六个字段</p>
-<p>netid 它表示套接字类型和传输协议, 当它不明确时：tcp、udp、raw、u str是unix_stream的缩写，u_dgr是unix数据报套接字，nl是netlink，p_raw和p_dgr是raw和datagram数据包套接字</p>
-<p>第二列是状态。此处显示套接字状态。这些名称是标准TCP名称，但UNCON除外，它不能用于TCP，但对于其他类型的未连接的套接字是正常的。同样，可以隐藏此列。</p>
-<p>然后两列（recv-q和send-q）显示排队等待接收和发送的数据量。</p>
-<p>最后两列显示了套接字的本地地址和端口以及它的对等地址（如果套接字已连接）。 </p>
-<p>如果给出了选项-o、-e或-p，则不在固定位置显示选项，而是用空格对分隔：选项：值。如果值不是一个数字，它将以值列表的形式显示，括在（…）用逗号分隔</p>
-<p>关于* </p>
-<p>答：仅是和简单的打开、管理相关的sockets,而不管在内核级别的传输是什么层</p>
-<p>关于total 和kernel 的 数量不一致的解释：</p>
-<p>答:系统socket 使用后不会立即过期,所以 26437 是所有active sockets 减去过期sockets.。27730 是 连接到kernel sockets，包含（27730-26437）剩余的 还没有被 kernel清理的sockets。<br><a href="http://tweaked.io/guide/kernel/" target="_blank" rel="noopener">http://tweaked.io/guide/kernel/</a><br>这篇关于内核调优的页面很好地概述了内核如何处理套接字的概念，以及如何调整系统以更好地管理内核级别的套接字。</p>
-<p>硬翻外国文档</p>
-<p><a href="https://superuser.com/questions/885250/what-does-the-output-of-ss-s-mean" target="_blank" rel="noopener">https://superuser.com/questions/885250/what-does-the-output-of-ss-s-mean</a></p>
-<p>socket 和port 的区别</p>
-<p><a href="https://stackoverflow.com/questions/152457/what-is-the-difference-between-a-port-and-a-socket/152863#152863" target="_blank" rel="noopener">https://stackoverflow.com/questions/152457/what-is-the-difference-between-a-port-and-a-socket/152863#152863</a></p>
-<p>ss命令详解</p>
-<p><a href="https://www.cyberciti.biz/tips/linux-investigate-sockets-network-connections.html" target="_blank" rel="noopener">https://www.cyberciti.biz/tips/linux-investigate-sockets-network-connections.html</a></p>
-<p>Linux创建sockets原理</p>
-<p><a href="https://ops.tips/blog/how-linux-creates-sockets/" target="_blank" rel="noopener">https://ops.tips/blog/how-linux-creates-sockets/</a></p>
-<p>通过本文知道，kernel 的数值 是取得kernel 全部的sockets,而且不能知道 这些sockets 具体是被哪些占用，就算用不同的namespace，也是一样</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Create a bunch of sockets using our</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> example <span class="keyword">in</span> C</span></span><br><span class="line">./sockets.out</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Check that we have a bunch of sockets</span></span><br><span class="line">cat /proc/net/sockstat</span><br><span class="line">sockets: used 296</span><br><span class="line">TCP: inuse 5 orphan 0 tw 2 alloc 108 mem 3</span><br><span class="line">UDP: inuse 1 mem 0</span><br><span class="line">UDPLITE: inuse 0</span><br><span class="line">RAW: inuse 0</span><br><span class="line">FRAG: inuse 0 memory 0</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Create a network namespace</span></span><br><span class="line">ip netns add namespace1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Get into it</span></span><br><span class="line">ip netns exec namespace1 /bin/bash</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Check how `/proc/net/sockstat` shows the same</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> number of allocated sockets.</span></span><br><span class="line">TCP: inuse 0 orphan 0 tw 0 alloc 108 mem 3</span><br><span class="line">UDP: inuse 0 mem 0</span><br><span class="line">UDPLITE: inuse 0</span><br><span class="line">RAW: inuse 0</span><br><span class="line">FRAG: inuse 0 memory 0</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>centos</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>配置shadowsocks服务端</title>
-    <url>/2018/08/09/2018-08-09-%E9%85%8D%E7%BD%AEshadowscoks%E6%9C%8D%E5%8A%A1%E7%AB%AF/</url>
-    <content><![CDATA[<h1 id="安装shadowsocks"><a href="#安装shadowsocks" class="headerlink" title="安装shadowsocks"></a>安装shadowsocks</h1><p>以centos7 举例</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pip install shadowsocks</span><br></pre></td></tr></table></figure>
-
-<hr>
-<a id="more"></a>
-
-<h1 id="配置shadowsocks"><a href="#配置shadowsocks" class="headerlink" title="配置shadowsocks"></a>配置shadowsocks</h1><p>shadowsocks有两种配置方法，一种是命令行参数配置，一种是配置文件。先来说说命令行配置</p>
-<h2 id="命令行参数配置"><a href="#命令行参数配置" class="headerlink" title="命令行参数配置"></a>命令行参数配置</h2><p>命令行参数如下：<br>|参数名 | 参数意义|<br>|:–|:–|<br>|-s | 服务器地址<br>|-p | 服务器端口号<br>|-k    |服务器密码<br>|-m    |服务器加密方式<br>|-t    |服务器超时时间<br>|-c    |配置文件路径<br>|–fast-open    |快速打开模式，仅Unix/Linux系统可用<br>|–workers    |工作者数量</p>
-<p>每次运行shadowsocks都将一大堆参数传进去是件很麻烦的事情。所以一般情况下都是采用配置文件的方式来配置的。然后通过-c参数将配置文件路径传入。</p>
-<h1 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h1><p>shadowsocks的配置文件是一个json形式的文件，各参数的意义和命令行参数意义相同。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;server&quot;:&quot;my_server_ip&quot;,</span><br><span class="line">    &quot;server_port&quot;:8388,</span><br><span class="line">    &quot;local_address&quot;: &quot;127.0.0.1&quot;,</span><br><span class="line">    &quot;local_port&quot;:1080,</span><br><span class="line">    &quot;password&quot;:&quot;mypassword&quot;,</span><br><span class="line">    &quot;timeout&quot;:300,</span><br><span class="line">    &quot;method&quot;:&quot;aes-256-cfb&quot;,</span><br><span class="line">    &quot;fast_open&quot;: false</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>服务器地址就写服务器的ip地址，不要写127.0.0.1。端口号可以自己写，但是不要占用其他服务的端口。本地地址和本地端口是客户端使用的，服务端可以不用理会。密码尽量采用复杂一点的密码，以保证安全性。加密方式使用aes-256-cfb就可以了。如果服务器是Linux系统的话，打开fast_open</p>
-<p>配置文件编辑完毕之后，就可以运行shadowsocks了。前台运行：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks&#x2F;config.json</span><br></pre></td></tr></table></figure>
-<p>后台运行和停止：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json -d start</span><br><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json -d stop</span><br></pre></td></tr></table></figure>
-<p>以上都是在root用户下运行的。以root方式运行可能会有一些安全问题。所以一般都是使用普通用户运行：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssserver -c &#x2F;etc&#x2F;shadowsocks.json --user nobody -d start</span><br></pre></td></tr></table></figure>
-
-<p>以上都需要自己手动运行命令来启动shadowsocks。要让shadowsocks在系统启动时自动运行，需要在/etc/rc.local中添加命令。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo ssserver -c &#x2F;etc&#x2F;shadowsocks.json --user nobody -d start</span><br></pre></td></tr></table></figure>
-
-<h1 id="shadowsocks优化"><a href="#shadowsocks优化" class="headerlink" title="shadowsocks优化"></a>shadowsocks优化</h1><h2 id="提高最大连接数"><a href="#提高最大连接数" class="headerlink" title="提高最大连接数"></a>提高最大连接数</h2><p>编辑/etc/security/limits.conf文件，添加以下两行：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">* soft nofile 51200</span><br><span class="line">* hard nofile 51200</span><br></pre></td></tr></table></figure>
-<p>然后，在启动shadowsocks服务器之前，先设置一下ulimit：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ulimit -n 51200</span><br></pre></td></tr></table></figure>
-<h2 id="调整内核参数"><a href="#调整内核参数" class="headerlink" title="调整内核参数"></a>调整内核参数</h2><p>调整内核参数的目标是：</p>
+<h1 id="替代分析"><a href="#替代分析" class="headerlink" title="替代分析"></a>替代分析</h1><h2 id="Kube-router替代kube-proxy"><a href="#Kube-router替代kube-proxy" class="headerlink" title="Kube-router替代kube-proxy"></a>Kube-router替代kube-proxy</h2><p>kube-proxy的作用主要是用于监听API server中 service 和 endpoint的变化情况，并通过iptables等来为服务配置负载均衡（仅支持TCP和UDP）。kube-proxy 可以直接运行在物理机上，也可以以 static pod 或者 daemonset 的方式运行。</p>
+<p>Kube-proxy主要有以下技术特点：</p>
 <ul>
-<li>尽可能重用连接和端口号</li>
-<li>尽可能增大队列和缓冲区</li>
-<li>为高延迟和高流量选择合适的TCP拥塞算法</li>
+<li><p>底层默认使用iptables进行流量的转发</p>
+</li>
+<li><p>通过监听api server服务中的对象变化，实现service发现功能。</p>
+</li>
 </ul>
-<p>下面是一个生产服务器的配置(/etc/sysctl.conf)，实例。如果不能使用，可能需要自己编译内核模块</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">fs.file-max &#x3D; 51200</span><br><span class="line"></span><br><span class="line">net.core.rmem_max &#x3D; 67108864</span><br><span class="line">net.core.wmem_max &#x3D; 67108864</span><br><span class="line">net.core.netdev_max_backlog &#x3D; 250000</span><br><span class="line">net.core.somaxconn &#x3D; 4096</span><br><span class="line"></span><br><span class="line">net.ipv4.tcp_syncookies &#x3D; 1</span><br><span class="line">net.ipv4.tcp_tw_reuse &#x3D; 1</span><br><span class="line">net.ipv4.tcp_tw_recycle &#x3D; 0</span><br><span class="line">net.ipv4.tcp_fin_timeout &#x3D; 30</span><br><span class="line">net.ipv4.tcp_keepalive_time &#x3D; 1200</span><br><span class="line">net.ipv4.ip_local_port_range &#x3D; 10000 65000</span><br><span class="line">net.ipv4.tcp_max_syn_backlog &#x3D; 8192</span><br><span class="line">net.ipv4.tcp_max_tw_buckets &#x3D; 5000</span><br><span class="line">net.ipv4.tcp_fastopen &#x3D; 3</span><br><span class="line">net.ipv4.tcp_mem &#x3D; 25600 51200 102400</span><br><span class="line">net.ipv4.tcp_rmem &#x3D; 4096 87380 67108864</span><br><span class="line">net.ipv4.tcp_wmem &#x3D; 4096 65536 67108864</span><br><span class="line">net.ipv4.tcp_mtu_probing &#x3D; 1</span><br><span class="line">net.ipv4.tcp_congestion_control &#x3D; hybla</span><br></pre></td></tr></table></figure>
-<p>修改之后需要运行sysctl -p来重载配置</p>
-<h3 id="转载于"><a href="#转载于" class="headerlink" title="转载于###"></a>转载于###</h3><p><a href="https://blog.csdn.net/u011054333/article/details/52496303" target="_blank" rel="noopener">https://blog.csdn.net/u011054333/article/details/52496303</a></p>
-<h1 id="docker-启动"><a href="#docker-启动" class="headerlink" title="docker 启动#"></a>docker 启动#</h1><p>有2个image可以选择<br>简单实用版</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -d -p 1984:1984 oddrationale&#x2F;docker-shadowsocks -s 0.0.0.0 -p 1984 -k $SSPASSWORD -m aes-256-cfb</span><br></pre></td></tr></table></figure>
-
-<p>持续更新，附加功能版(集成 kcptun、simple-obfs),具体参数可以查看hub.docker.com</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run -dt --name ss -p 6443:6443 mritd&#x2F;shadowsocks -s &quot;-s 0.0.0.0 -p 6443 -m chacha20 -k test123 --fast-open&quot;</span><br></pre></td></tr></table></figure>
-
-
-
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>GreateWall</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>docker 异常处理集合</title>
-    <url>/2020/07/20/2020-07-20-docker-%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86%E9%9B%86%E5%90%88/</url>
-    <content><![CDATA[<h1 id="一、kernel-4-6-无法创建container"><a href="#一、kernel-4-6-无法创建container" class="headerlink" title="一、kernel-4.6 无法创建container"></a><strong>一、kernel-4.6 无法创建container</strong></h1><p> 4.0内核,docker官方推荐的是overlay2 做storage driver，但是，xfs文件系统在4.0上与docker不能兼容，需要更改文件系统为ext4。</p>
-<p> github链接</p>
-<p> <a href="https://github.com/docker/docker/issues/23930" target="_blank" rel="noopener">https://github.com/docker/docker/issues/23930</a></p>
- <a id="more"></a>
-
-<p><strong>二、无法初始化docker</strong></p>
-<p> centos6升级到7后，storage driver是overlay的，graph无法初始化，需要把文件系统从ext4换为xfs</p>
-<p><strong>三、自定义docker配置(基于centos7)</strong></p>
-<p>之前喜欢把/var/lib/docker软链到特定的目录，会有异常bug,比如plugin无法使用，所以抛弃软链</p>
-<p>自己有个性化的设置，需要改docker.service</p>
-<p>-g 指定docker目录</p>
-<p>-s 指定storage driver</p>
-<p>-H 指定socket,监听ip/端口号</p>
- <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sed -i '\/usr\/bin\/dockerd/aEnvironmentFile=/etc/sysconfig/docker'</span><br><span class="line">/usr/lib/systemd/system/docker.service</span><br><span class="line">sed -i s'/dockerd/dockerd $OPTIONS/' /usr/lib/systemd/system/docker.service</span><br><span class="line">echo 'OPTIONS="-g /data/docker -s overlay -H unix:///var/run/docker.sock -H 0.0.0.0:2375"'&gt;/etc/sysconfig/docker</span><br></pre></td></tr></table></figure>
+<p>而kuberouter采用了基于相同技术但增加了更多负载均衡策略的IPVS来实现流量转发，服务发现的实现与kube-proxy一致。因此可以直接替代kube-proxy。</p>
+<h2 id="Kube-router代替flannel-Calico等网络组件"><a href="#Kube-router代替flannel-Calico等网络组件" class="headerlink" title="Kube-router代替flannel/Calico等网络组件"></a>Kube-router代替flannel/Calico等网络组件</h2><p>kubernetes 对网络的要求是：容器之间（包括同一台主机上的容器，和不同主机的容器）可以互相通信，容器和集群中所有的节点也能直接通信。</p>
+<p>在kube-router出现之前，kubernetes长期以来使用第三方模块来负责网络模块配置，其中flannel是其中较为常用的一个，以flannel为例。</p>
+<p>flannel在集群中的功能主要有以下两点：</p>
+<p>能够给每个 Node 分配互不冲突的网段，意味着集群内每个容器有着互不冲突的 IP 地址；（指定 docker 启动参数的方式指定网段）</p>
+<p>能够建立一个覆盖网络，通过这个覆盖网络，能将数据包原封不动传递到目标容器内。（这里传递通常是 UDP 数据包）</p>
+<p>在实际运行过程中，每个节点需要部署一个flannel服务，部署成功后会生成一个flannel.0的虚拟设备，同时会运行flanneld的进程，用以链接flannel.0和物理网卡。传输过程中的数据包通过路由规则判断，如果是本网段的访问，就会走 docker0 网桥；如果是跨网段，也就是要跨宿主机访问，就会将数据发往 flannel0。flanneld将数据包封装成底层通信包，协议包括UDP、Vxlan等，这里往往用的是UDP，这个UDP 的packet 会根据 etcd 存放的路由表（一般会缓存到主机内存里）找到目的容器 IP 所承载的宿主机 IP，不借助第三方路由设备的前提下，数据包发送到了宿主机上。此时目标宿主机的 flanneld 进程会对 UDP 包进行解包操作，转化成数据包原本的协议，最终根据主机内部路由流入到目标容器中。</p>
+<p>完成这一系列动作有两个核心的技术点：</p>
+<p>flannel分配虚拟网卡是基于TUN/TAP虚拟网卡技术。</p>
+<p>flannel是三层设备，利用backend对节点内的二层的数据包封包成UDP，再发送到目的节点的flanneld进行解包。</p>
+<p>在kuberouter中，这种网络管理机制由CNI（容器网络接口）+BGP协议实现的。</p>
+<p>Kube-router不像flannel一样采用子网管理的方式，而是利用kube-conroller-manager来做子网分配，每一个节点会根据cluster CIDR被分配到集群中独一无二的子网ip。Kube-router运行在集群中每个节点运行IBGP，同时自动将所有节点组成网络。所有的集群中的节点在集群中将组成可配置的私有自治网络。Kube-router将会广播pod CIDR，并且保存从同一个主机命名空间学习到的路由。</p>
+<p>子网IP的管理是由CNI的brige插件配合IPAM的host-local插件完成。</p>
+<h1 id="部署kube-router"><a href="#部署kube-router" class="headerlink" title="部署kube-router"></a>部署kube-router</h1><h2 id="依赖"><a href="#依赖" class="headerlink" title="依赖"></a>依赖</h2><ul>
+<li><p>kube-router 能够访问apiserver</p>
+<p>这边提供kubeconfig方式</p>
+</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">clusters:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">cluster:</span></span><br><span class="line">    <span class="attr">certificate-authority:</span> <span class="string">/var/run/secrets/kubernetes.io/serviceaccount/ca.crt</span></span><br><span class="line">    <span class="attr">server:</span> <span class="string">https://k8s.foxchan.com</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">contexts:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">context:</span></span><br><span class="line">    <span class="attr">cluster:</span> <span class="string">default</span></span><br><span class="line">    <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line">    <span class="attr">user:</span> <span class="string">default</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">current-context:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">users:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">name:</span> <span class="string">default</span></span><br><span class="line">  <span class="attr">user:</span></span><br><span class="line">    <span class="attr">tokenFile:</span> <span class="string">/var/run/secrets/kubernetes.io/serviceaccount/token</span></span><br></pre></td></tr></table></figure>
 
 
 
-
-
-<p><strong>四、device or resource busy</strong></p>
-<p>有时候创建、删除、停止容器的时候，会报错如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> docker start c39206003c7a</span></span><br><span class="line">Error: Cannot start container c39206003c7a: Error getting container c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5 from driver devicemapper: Error mounting '/dev/mapper/docker-253:0-267081-c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5' on '/var/lib/docker/devicemapper/mnt/c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5': device or resource busy</span><br><span class="line">Error: failed to start one or more containers</span><br><span class="line"> </span><br><span class="line"><span class="meta">$</span><span class="bash"> docker rm c39206003c7a</span></span><br><span class="line">Error: Cannot destroy container c39206003c7a: Driver devicemapper failed to remove root filesystem c39206003c7ae8992a554a9ac2ea130327fc4af1b2c389656c34baf9a56c84b5: Error running removeDevice</span><br><span class="line">Error: failed to remove one or more containers</span><br></pre></td></tr></table></figure>
-
-<p> 解决方式2种：</p>
-<p>4.1 出现问题一般是storage driver是devicemapper, 更换操作系统用Ubuntu的aufs或者redhat的overlay</p>
-<p>4.2 取消挂载</p>
- <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">umount /var/lib/devicemapper/mnt/ 容器 id</span><br></pre></td></tr></table></figure>
-
-
-
-<p>4.3 执行命令</p>
-<p>如果状态是Dead的， 先尝试docker rm -f containerId</p>
-<p>如果不成功 执行   cat /proc/mounts | grep “mapper/docker” | awk ‘{print $2}’</p>
-<h1 id="五、busybox-nslookup-不能使用"><a href="#五、busybox-nslookup-不能使用" class="headerlink" title="五、busybox nslookup 不能使用"></a>五、busybox nslookup 不能使用</h1><p>1.29 开始修改了nslookup的解析方式。 推荐使用1.28</p>
-<p>官方issue： <a href="https://github.com/docker-library/busybox/issues/48" target="_blank" rel="noopener">https://github.com/docker-library/busybox/issues/48</a></p>
-<p>或者改用 -type=a </p>
-<h1 id="六、史诗级bug"><a href="#六、史诗级bug" class="headerlink" title="六、史诗级bug"></a>六、史诗级bug</h1><p>unregister_netdevice: waiting for lo to become free. Usage count = #</p>
-<p>issue: <a href="https://github.com/moby/moby/issues/5618" target="_blank" rel="noopener">https://github.com/moby/moby/issues/5618</a></p>
-<p>没有解决</p>
-]]></content>
-      <categories>
-        <category>技术</category>
-      </categories>
-      <tags>
-        <tag>docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>kubernetes 容器 DNS 设置</title>
-    <url>/2020/04/01/2020-04-01-kubernetes%20%E5%AE%B9%E5%99%A8%20DNS%20%E8%AE%BE%E7%BD%AE/</url>
-    <content><![CDATA[<h1 id="添加默认配置"><a href="#添加默认配置" class="headerlink" title="添加默认配置"></a>添加默认配置</h1><p>在 kubernetes 中将 DNS 设置配置在 dnsConfig 配置项中， 而 dnsConfig 包含在 PodSpec 配置项中，因此 Pod 内所有容器都共享相同的 Network Namespace 。如下所示：</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
-<p>即，在 nameservers 中多了 172.xxx.xxx.201 、 search 中多了 ns1.svc.cluster.local 和 my.dns.search.suffix 两项值，及多了 options ndots:2 edns0 配置。</p>
-<p>因此，直接通过 dnsConfig 进行配置后，默认是追加到当前默认配置中。</p>
-<a id="more"></a>
-
-<h1 id="DNS-策略"><a href="#DNS-策略" class="headerlink" title="DNS 策略"></a>DNS 策略</h1><p>在 kubernetes 中还提供了 dnsPolicy 决定 Pod 内预设 DNS 配置策略：</p>
 <ul>
-<li>None 无任何策略</li>
-<li>Default 默认</li>
-<li>ClusterFirst 集群 DNS 优先</li>
-<li>ClusterFirstWithHostNet 集群 DNS 优先，并伴随着使用宿主机网络</li>
+<li>controller-manager必要配置参数</li>
 </ul>
-<h2 id="无策略-None"><a href="#无策略-None" class="headerlink" title="无策略 (None)"></a>无策略 (None)</h2><p>清除 Pod 预设 DNS 配置，当 dnsPolicy 设置成为这个值之后， kubernetes 不会为 Pod 预先加载任何逻辑用于判定得到 DNS 的配置。因此若将 dnsPolicy 设置为 None , 为了避免 Pod 里面没有 DNS 配置，最好通过 dnsConfig 来描述自定义的 DNS 参数。如下所示：</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">None</span></span><br><span class="line">  <span class="attr">dnsConfig:</span></span><br><span class="line">    <span class="attr">nameservers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">172.</span><span class="string">xxx.xxx.201</span></span><br><span class="line">    <span class="attr">searches:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ns1.svc.cluster.local</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my.dns.search.suffix</span></span><br><span class="line">    <span class="attr">options:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">ndots</span></span><br><span class="line">        <span class="attr">value:</span> <span class="string">"2"</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">edns0</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">search ns1.svc.cluster.local my.dns.search.suffix</span><br><span class="line">options ndots:2 edns0</span><br></pre></td></tr></table></figure>
-<h2 id="默认预设-Default"><a href="#默认预设-Default" class="headerlink" title="默认预设 (Default)"></a>默认预设 (Default)</h2><p>Pod 里面的 DNS 配置继承了宿主机上的 DNS 配置。即，该 Pod 的 DNS 配置与宿主机完全一致。</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">Default</span></span><br></pre></td></tr></table></figure>
-<p>通过 cat /etc/resolv.conf 可查看到宿主机上的配置如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Dynamic resolv.conf(5) file <span class="keyword">for</span> glibc resolver(3) generated by resolvconf(8)</span></span><br><span class="line"><span class="meta">#</span><span class="bash">     DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN</span></span><br><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
-<h2 id="集群优先-ClusterFirst"><a href="#集群优先-ClusterFirst" class="headerlink" title="集群优先 (ClusterFirst)"></a>集群优先 (ClusterFirst)</h2><p>与 Default 相反，会预先使用 kube-dns (或 CoreDNS ) 的信息当预设置参数写入到该 Pod 内的DNS配置。</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.cluster.local svc.cluster.local cluster.local</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
-<p>注 如设置了 hostNetwork = true 时，ClusterFirst 会被强制转化为 Default 。如下：</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirst</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 172.xxx.xxx.201</span><br><span class="line">nameserver 114.114.114.114</span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">--cluster-cidr=10.244.0.0/16 \</span><br><span class="line">--allocate-node-cidrs=true \</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>直接在主机运行需要有ipset命令</li>
+<li>以daemonseset 运行需要kube-apiserver 和kubelet 同时开启–allow-privileged=true</li>
+<li>如果选择pod-to-pod 网络模式，需要部署CNI插件</li>
+</ul>
+<p>官方给的简单示例</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget -O /etc/cni/net.d/10-kuberouter.conf https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/cni/10-kuberouter.conf</span><br></pre></td></tr></table></figure>
+
+<h2 id="参数说明"><a href="#参数说明" class="headerlink" title="参数说明"></a>参数说明</h2><ul>
+<li>使用iptables实现网络策略限制. –run-firewall参数，可透传源IP。</li>
+<li>通过bgp实现路由策略.–run-router 参数</li>
+<li>通过lvs实现代理策略。 –run-service-proxy</li>
+</ul>
+<p>–run-firewall, –run-router, –run-service-proxy可以有选择地只启用kube-router所需的功能</p>
+<ul>
+<li>只提供入口防火墙：–run-firewall=true –run-service-proxy=false –run-router=false</li>
+<li>仅仅替换kube-proxy: –run-service-proxy=true –run-firewall=false –run-router=false</li>
+</ul>
+<p><strong>查看现有集群nodeCIDR划分</strong></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl get nodes -o json | jq '.items[] | .spec'</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><p><strong>集群安装时没有选择kube-proxy插件</strong></p>
 <blockquote>
-<p>注 设置 hostNetwork = true 之后，会让 Pod 与该节点公用相同的网络空间(网卡/路由等)</p>
+<p>从k8s1.14开始，可以在kubeadm init的时候指定组件是否安装</p>
 </blockquote>
-<h2 id="宿主机与-Kubernetes-共存-ClusterFirstWithHostNet"><a href="#宿主机与-Kubernetes-共存-ClusterFirstWithHostNet" class="headerlink" title="宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )"></a>宿主机与 Kubernetes 共存 ( ClusterFirstWithHostNet )</h2><p>同时使用 hostNetwork 与 kube-dns 作为 Pod 预设 DNS 配置。</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">base/java</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"java -jar /opt/app.jar"</span></span><br><span class="line">    <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">demo</span></span><br><span class="line">  <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Always</span></span><br><span class="line">  <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirstWithHostNet</span></span><br></pre></td></tr></table></figure>
-<p>通过上述配置创建 Pod 之后，执行 kubectl exec demo cat /etc/resolv.conf 命令即可看到额外的配置项目，如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nameserver 10.20.0.2</span><br><span class="line">search default.svc.k8s.local. svc.k8s.local. k8s.local.</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
+<p>先要创建kube-proxy configmap，然后修改yaml</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl create configmap kube-router --namespace=kube-system --from-file=kubeconfig</span><br><span class="line">wget -o kubeadm-kuberouter-all-features.yaml https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter-all-features.yaml</span><br></pre></td></tr></table></figure>
+
+<p>修改yaml，去访问之前生成的kubeconfig</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="string">...</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">cni-conf-dir</span></span><br><span class="line">          <span class="attr">mountPath:</span> <span class="string">/etc/cni/net.d</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">kubeconfig</span></span><br><span class="line">          <span class="attr">mountPath:</span> <span class="string">/var/lib/kube-router</span></span><br><span class="line">          <span class="attr">readOnly:</span> <span class="literal">true</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">xtables-lock</span></span><br><span class="line">          <span class="attr">mountPath:</span> <span class="string">/run/xtables.lock</span></span><br><span class="line">          <span class="attr">readOnly:</span> <span class="literal">false</span></span><br><span class="line"><span class="string">...</span></span><br><span class="line">      <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">lib-modules</span></span><br><span class="line">        <span class="attr">hostPath:</span></span><br><span class="line">          <span class="attr">path:</span> <span class="string">/lib/modules</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">cni-conf-dir</span></span><br><span class="line">        <span class="attr">hostPath:</span></span><br><span class="line">          <span class="attr">path:</span> <span class="string">/etc/cni/net.d</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">kube-router-cfg</span></span><br><span class="line">        <span class="attr">configMap:</span></span><br><span class="line">          <span class="attr">name:</span> <span class="string">kube-router-cfg</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">kubeconfig</span></span><br><span class="line">        <span class="attr">configMap:</span></span><br><span class="line">          <span class="attr">name:</span> <span class="string">kube-router</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">xtables-lock</span></span><br><span class="line">        <span class="attr">hostPath:</span></span><br><span class="line">          <span class="attr">path:</span> <span class="string">/run/xtables.lock</span></span><br><span class="line">          <span class="attr">type:</span> <span class="string">FileOrCreate</span></span><br><span class="line"><span class="string">...</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>集群已经有kube-proxy</strong></p>
+<p>只是进行替换</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter-all-features.yaml</span><br></pre></td></tr></table></figure>
+
+<p>安装完成后，清理iptables</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl -n kube-system delete ds kube-proxy</span><br><span class="line">docker run --privileged -v /lib/modules:/lib/modules --net=host k8s.gcr.io/kube-proxy-amd64:v1.17.9 kube-proxy --cleanup</span><br></pre></td></tr></table></figure>
 
 
-<p>此文章选自：<br>作者：走在成长的道路上<br>链接：<a href="https://www.jianshu.com/p/dbc063e190c9" target="_blank" rel="noopener">https://www.jianshu.com/p/dbc063e190c9</a></p>
-<p>​    </p>
-]]></content>
+
+<h2 id="命令行汉化"><a href="#命令行汉化" class="headerlink" title="命令行汉化"></a>命令行汉化</h2><p>汉化命令</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">Usage of ./kube-router:</span><br><span class="line">      --advertise-cluster-ip                将该服务的集群IP添加到RIB，以便通告给BGP peers.</span><br><span class="line">      --advertise-external-ip               将服务的外部IP添加到RIB，以便将其通告给BGP peers.</span><br><span class="line">      --cleanup-config                      清理iptables规则，ipvs，ipset配置并退出.</span><br><span class="line">      --cluster-asn uint                    集群节点运行iBGP的ASN编号.</span><br><span class="line">      --cluster-cidr string                 群集中的CIDR范围。它被用来识别pods的范围.</span><br><span class="line">      --config-sync-period duration         apiserver配置同步之间的延迟（例如“5s”，“1m”）。必须大于0.（默认1m0s）</span><br><span class="line">      --enable-overlay                      当enable-overlay设置为true时，IP-in-IP隧道将用于跨不同子网中节点的pod-pod联网。如果设置为false，则不使用隧道，并且路由基础架构预计为不同子网中的节点之间的pod-pod联网路由流量（默认值为true）</span><br><span class="line">      --enable-pod-egress                   从Pod到群集外的SNAT流量。 （默认为true）</span><br><span class="line">      --hairpin-mode                        为每个服务端点添加iptable规则以支持流量管控.</span><br><span class="line">  -h, --help                                打印使用信息.</span><br><span class="line">      --hostname-override string            覆盖节点的NodeName。如果kube-router无法自动确定您的NodeName，请设置此项.</span><br><span class="line">      --iptables-sync-period duration       iptables规则同步之间的延迟（例如'5s'，'1m'）。必须大于0.（默认1m0s）</span><br><span class="line">      --ipvs-sync-period duration           ipvs config同步之间的延迟（例如'5s'，'1m'，'2h22m'）。必须大于0.（默认1m0s）</span><br><span class="line">      --kubeconfig string                   具有授权信息的kubeconfig文件的路径（主位置由主标志设置）。</span><br><span class="line">      --masquerade-all                      SNAT所有流量到群集IP /节点端口。</span><br><span class="line">      --master string                       Kubernetes API服务器的地址（覆盖kubeconfig中的任何值）。</span><br><span class="line">      --nodeport-bindon-all-ip              对于NodePort类型的服务，创建监听节点的所有IP的IPVS服务.</span><br><span class="line">      --nodes-full-mesh                     集群中的每个节点都将建立与其他节点的BGP对等关系。 （默认为true）</span><br><span class="line">      --peer-router-asns uintSlice          集群节点将向其通告集群ip和节点的pid cidr的BGP peers的ASN编号。 （默认[]）</span><br><span class="line">      --peer-router-ips ipSlice             所有节点将对等的外部路由器的IP地址，并通告集群ip和pod cidr。 （默认[]）</span><br><span class="line">      --peer-router-passwords stringSlice   用“--peer-router-ips”定义的BGP peers进行认证的密码。</span><br><span class="line">      --routes-sync-period duration         路线更新与广播之间的延迟（例如“5s”，“1m”，“2h22m”）。必须大于0.（默认1m0s）</span><br><span class="line">      --run-firewall                        启用网络策略 - 设置iptables为pod提供入口防火墙。 （默认为true）</span><br><span class="line">      --run-router                          启用Pod网络 - 通过iBGP发布并学习到Pod的路由。 （默认为true）</span><br><span class="line">      --run-service-proxy                   启用服务代理 - 为Kubernetes服务设置IPVS。 （默认为true）</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h1><h2 id="负载均衡调度算法"><a href="#负载均衡调度算法" class="headerlink" title="负载均衡调度算法"></a>负载均衡调度算法</h2><p>Kube-router使用LVS作为服务代理。 LVS支持丰富的<a href="http://kb.linuxvirtualserver.org/wiki/IPVS#Job_Scheduling_Algorithms" target="_blank" rel="noopener">调度算法</a>。您可以为该服务添加注释以选择一个调度算法。当一个服务没有注释时，默认情况下选择“轮询”调度策略</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">For least connection scheduling use:</span><br><span class="line">kubectl annotate service my-service "kube-router.io/service.scheduler=lc"</span><br><span class="line">For round-robin scheduling use:</span><br><span class="line">kubectl annotate service my-service "kube-router.io/service.scheduler=rr"</span><br><span class="line">For source hashing scheduling use:</span><br><span class="line">kubectl annotate service my-service "kube-router.io/service.scheduler=sh"</span><br><span class="line">For destination hashing scheduling use:</span><br><span class="line">kubectl annotate service my-service "kube-router.io/service.scheduler=dh"</span><br></pre></td></tr></table></figure>
+
+<h2 id="Direct-server-return"><a href="#Direct-server-return" class="headerlink" title="Direct server return"></a>Direct server return</h2><p>请阅读以下博客，了解如何结合使用DSR和“–advertise-external-ip”构建高度可扩展和可用的入口。 <a href="https://cloudnativelabs.github.io/post/2017-11-01-kube-high-available-ingress/" target="_blank" rel="noopener">https://cloudnativelabs.github.io/post/2017-11-01-kube-high-available-ingress/</a><br>您可以为每个服务启用DSR（直接服务器返回）功能。当启用的服务端点将直接响应客户端通过签署服务代理。启用DSR时，Kube-router将使用LVS的隧道模式来实现此功能。<br>要启用DSR，您需要使用kube-router.io/service.dsr = tunnel注释来注释服务。例如，</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl annotate service my-service "kube-router.io/service.dsr=tunnel"</span><br></pre></td></tr></table></figure>
+
+<p>在当前的实现中，当在服务上应用注释时，DSR将仅适用于外部IP。<br>此外，当使用DSR时，当前的实现不支持端口重新映射。所以你需要使用相同的端口和目标端口的服务<br>你需要在kube-router守护进程清单中启用hostIPC：true和hostPID：true。并且必须将主路径/var/run/docker.sock设置为kube-router的一个volumemount。<br>上述更改需要kube-router输入pod namespace，并在pod中创建ipip隧道，并将外部IP分配给VIP。<br>对于示例清单，请查看启用DSR功能的<a href="https://github.com/cloudnativelabs/kube-router/blob/v1.0.0/daemonset/kubeadm-kuberouter-all-features-dsr.yaml" target="_blank" rel="noopener">manifest</a></p>
+<h2 id="暴露服务"><a href="#暴露服务" class="headerlink" title="暴露服务"></a>暴露服务</h2><ul>
+<li>svc clusterip</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> kubectl expose nginx --target-port=80 --port=80</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> kubectl get svc nginx -o template --template=<span class="string">'&#123;&#123;.spec.clusterIP&#125;&#125;'</span></span></span><br><span class="line">10.254.116.179</span><br></pre></td></tr></table></figure>
+
+<p>在每台机器上查看lvs条目</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ipvsadm -Ln</span><br><span class="line">IP Virtual Server version 1.2.1 (size&#x3D;4096)</span><br><span class="line">Prot LocalAddress:Port Scheduler Flags</span><br><span class="line">  -&gt; RemoteAddress:Port           Forward Weight ActiveConn InActConn</span><br><span class="line">TCP  10.254.0.1:443 rr persistent 10800</span><br><span class="line">  -&gt; 172.26.6.1:6443              Masq    1      0          0</span><br><span class="line">TCP  10.254.116.179:80 rr 10800</span><br><span class="line">  -&gt; 10.254.11.2:80               Masq    1      0          0</span><br></pre></td></tr></table></figure>
+
+<p>发现本机SVCIP代理后端真实podip，使用rr算法，通过ip addr s可以看到每添加一个服务node节点上面的kube-dummy-if网卡就会增加一个虚IP</p>
+<ul>
+<li>svc session-affinity</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl delete svc nginx</span><br><span class="line">kubectl expose deploy nginx --target-port=80 --port=80 --session-affinity=ClientIP</span><br><span class="line">ipvsadm -Ln</span><br><span class="line">IP Virtual Server version 1.2.1 (size=4096)</span><br><span class="line">Prot LocalAddress:Port Scheduler Flags</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> RemoteAddress:Port           Forward Weight ActiveConn InActConn</span></span><br><span class="line">TCP  10.254.0.1:443 rr persistent 10800</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> 172.26.6.1:6443              Masq    1      0          0</span></span><br><span class="line">TCP  10.254.191.234:80 rr persistent 10800</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> 10.254.11.2:80               Masq    1      0          0</span></span><br><span class="line">我们可以看到 多个persistent，既lvs里面的持久链接</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>svc NodePort</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl delete svc nginx</span><br><span class="line">kubectl expose deploy nginx --target-port=80 --port=80 --type=NodePort</span><br><span class="line">ipvsadm -Ln</span><br><span class="line">IP Virtual Server version 1.2.1 (size=4096)</span><br><span class="line">Prot LocalAddress:Port Scheduler Flags</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> RemoteAddress:Port           Forward Weight ActiveConn InActConn</span></span><br><span class="line">TCP  172.26.6.3:31117 rr</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> 10.254.11.2:80               Masq    1      0          0</span></span><br><span class="line">TCP  10.254.0.1:443 rr persistent 10800</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> 172.26.6.1:6443              Masq    1      0          0</span></span><br><span class="line">TCP  10.254.102.188:80 rr</span><br><span class="line"><span class="meta">  -&gt;</span><span class="bash"> 10.254.11.2:80               Masq    1      0          0</span></span><br><span class="line">可以看到不仅有虚拟IP条目，还多了对应主机的lvs条目</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>更改算法</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl annotate service nginx "kube-router.io/service.scheduler=dh"</span><br></pre></td></tr></table></figure>
+
+<h2 id="network-policy"><a href="#network-policy" class="headerlink" title="network policy"></a>network policy</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">kubectl annotate ns prod "net.beta.kubernetes.io/network-policy=&#123;\"ingress\":&#123;\"isolation\":\"DefaultDeny\"&#125;&#125;"</span><br></pre></td></tr></table></figure>
+
+<p>测试可以看到其他命名空间ping不通该命名空间</p>
+<p>查看路由表</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">ip route s</span><br></pre></td></tr></table></figure>
+
+<p>查看bgp新信息</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">  kubectl --namespace=kube-system  <span class="built_in">exec</span> -it  kube-router-pk7fs /bin/bash </span></span><br><span class="line"><span class="meta">#</span><span class="bash">  gobgp neighbor -u 172.26.6.3 <span class="comment">#从哪些IP获得更新</span></span></span><br><span class="line">Peer          AS  Up/Down State       |#Received  Accepted</span><br><span class="line">172.26.6.2 64512 01:03:03 Establ      |        1         1</span><br><span class="line"><span class="meta">#</span><span class="bash">  gobgp global rib -u 172.26.6.3 <span class="comment">#global rib相当于路由表</span></span></span><br><span class="line">   Network              Next Hop             AS_PATH              Age        Attrs</span><br><span class="line">*&gt; 10.254.0.0/24        172.26.6.2                                01:03:24   [&#123;Origin: i&#125; &#123;LocalPref: 100&#125;]</span><br><span class="line">*&gt; 10.254.2.0/24        172.26.6.3                                00:00:32   [&#123;Origin: i&#125;]</span><br></pre></td></tr></table></figure>]]></content>
       <categories>
         <category>技术</category>
       </categories>
